@@ -1,6 +1,6 @@
 ![Asteria — Conjunction intelligence. See the close calls, sooner.](assets/asteria-cover.png)
 
-# Asteria: conjunction intelligence
+# Asteria — a satellite collision-risk forecasting dashboard built with Python, Streamlit, scikit-learn, and interactive Plotly 3D visualizations.
 
 An interactive prototype for Airbus Challenge 1: predict an event's **final recorded risk tier from a message available at least two days before closest approach**. Explore historical conjunction messages, rotate the relative encounter view, replay the evidence, and record an analyst review.
 
