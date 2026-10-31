@@ -169,6 +169,7 @@ def geometry_plot(row: pd.Series) -> go.Figure | None:
     extent = max(6.0, np.max(np.abs(vals))*1.15)
     axis = dict(backgroundcolor="rgba(0,0,0,0)", gridcolor=GRID, zerolinecolor="#526a76", color=MUTED, range=[-extent,extent], showbackground=False)
     fig.update_layout(scene=dict(xaxis=dict(axis,title="R · km"), yaxis=dict(axis,title="T · km"), zaxis=dict(axis,title="N · km"), aspectmode="cube", camera=dict(eye=dict(x=1.6,y=1.5,z=.95)), bgcolor="rgba(0,0,0,0)"))
+    fig.update_layout(modebar=dict(color="#9dcac3", activecolor="#69e5c7", bgcolor="#101f2b"))
     return chart_layout(fig, 390)
 
 
@@ -365,11 +366,10 @@ if page == "Mission control":
     if search.strip():
         filtered = filtered[filtered["event_id"].astype(str).str.contains(search.strip(), case=False, regex=False)]
     counts = filtered["risk_tier"].value_counts()
-    cards = st.columns(4)
+    cards = st.columns(3)
     with cards[0]: metric("Events in view", f"{len(filtered):,}", "Latest eligible message · ≥2 days", "#6de5cf")
     with cards[1]: metric("Critical", f"{counts.get('Critical', 0):,}", "Requires priority review", "#ff6f73")
     with cards[2]: metric("Elevated", f"{counts.get('Elevated', 0):,}", "Monitor and investigate", "#f7bd68")
-    with cards[3]: metric("24h · early-data coverage", "No data", "Forecast inputs stop at T−2 days", "#86acf4")
     st.caption(f"{int(filtered['review_required'].sum()):,} selected event messages have data-quality review flags. Flags do not measure model uncertainty.")
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
@@ -421,8 +421,9 @@ if page == "Mission control":
         if fig is None:
             st.info("Relative position is incomplete for this message.")
         else:
-            st.plotly_chart(fig, key="tour_geometry", width="stretch", config={"displayModeBar": False})
-        st.markdown('<div class="smallprint">Drag to rotate · R / T / N are radial, along-track and cross-track axes. Rings are 1 km and 5 km guides in the R–T plane.</div>', unsafe_allow_html=True)
+            # Streamlit adds its native fullscreen toggle to the Plotly toolbar.
+            st.plotly_chart(fig, key="tour_geometry", width="stretch", config={"displayModeBar": True, "displaylogo": False})
+        st.markdown('<div class="smallprint">Drag to rotate · Use the fullscreen icon at the chart’s top right to expand or return. R / T / N are radial, along-track and cross-track axes. Rings are 1 km and 5 km guides in the R–T plane.</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     section("03 / Understand", f"Event {event_id}", "Final-tier probabilities from the selected early message. These describe model uncertainty, not the probability of a collision.")
@@ -526,7 +527,6 @@ if page == "Mission control":
             rtn.update_yaxes(title="Recorded relative position · km", gridcolor=GRID)
             st.plotly_chart(chart_layout(rtn, 270), key="rtn_time_history", width="stretch", config={"displayModeBar": False})
             st.caption("Each point is a CDM estimate of relative position at closest approach, indexed by the message’s days to TCA. It is not an object’s path through space.")
-    st.markdown('<div class="note" style="margin-top:18px"><b>Why the 24-hour view has no data:</b> the official forecast task allows only messages at least 2 days before closest approach. An empty 0–1 day window means unavailable coverage, not zero danger. Historical messages have no common observation clock and are not a live warning feed.</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     bucket_caption = "One latest eligible early message per filtered event, grouped in 24-hour-wide intervals and colored by forecast final tier. These messages were not observed at a common time."
