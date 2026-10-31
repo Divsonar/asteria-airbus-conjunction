@@ -463,7 +463,7 @@ if page == "Mission control":
                 except Exception as exc:
                     st.error(f"Could not generate the assessment report: {exc}")
             with st.expander("Record an analyst review"):
-                st.caption("Records are stored on this computer. They document an assessment and do not authorize or execute a maneuver.")
+                st.caption("Records are stored on the app server and shared with its viewers. Cloud-hosted records may be lost on restart. They document an assessment and do not authorize or execute a maneuver.")
                 identity_codes = set(str(row.get("review_codes", "")).split("; "))
                 ambiguous_identity = bool(identity_codes & {"R-ROW-ID", "R-ID"})
                 if bundle["status"] != "verified":
