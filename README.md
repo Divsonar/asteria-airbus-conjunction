@@ -6,7 +6,7 @@ An interactive prototype for Airbus Challenge 1: predict an event's **final reco
 
 **[Watch the 30-second interface showcase](assets/asteria-showcase-30s.mp4)**
 
-Refreshed from the updated live app on 31 October: actual 3D rotation, all 13 early-message replay states, final-tier probabilities and current held-out evaluation. The banner and video are stored in this private repository alongside the source.
+Refreshed from the updated live app on 31 October: actual 3D rotation, all 13 early-message replay states, final-tier probabilities and current held-out evaluation. The banner and video are stored in this repository alongside the source.
 
 ## Updated challenge contract
 
@@ -89,4 +89,4 @@ Run the project checks after rebuilding:
 
 Relevant checks cover the two-day cutoff, event separation, source-specific IDs, target leakage, units and boundary rules, inference/export behavior, artifact consistency and report generation.
 
-Deployment uses Streamlit Community Cloud backed by the private GitHub repository. The local deployment checkout is tmp/asteria-private-deploy. Sync the reviewed source, documentation, media and regenerated artifacts together, commit and push there, then verify the hosted app's model target and artifact status after its rebuild. Keeping the repository private protects the source; live-app access is controlled separately in Streamlit.
+Deployment uses Streamlit Community Cloud backed by the GitHub repository. The local deployment checkout is tmp/asteria-private-deploy. Sync the reviewed source, documentation, media and regenerated artifacts together, commit and push there, then verify the hosted app's model target and artifact status after its rebuild. Repository visibility and live-app access are controlled separately in GitHub and Streamlit.
