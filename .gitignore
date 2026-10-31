@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.venv312/
+.pytest_cache/
+artifacts/analyst_decisions.sqlite*
+.streamlit/secrets.toml
+*.env
+Challenge 1 Airbus_/
+*.zip

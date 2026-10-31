@@ -1,0 +1,3 @@
+artifacts/*.csv -text
+artifacts/metrics.json -text
+artifacts/*.joblib binary

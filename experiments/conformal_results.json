@@ -1,0 +1,93 @@
+{
+  "nominal_coverage": 0.8,
+  "sample": {
+    "fit_events": 5524,
+    "calibration_events": 2368,
+    "calibration_rows": 29293,
+    "holdout_events": 2631,
+    "holdout_rows": 32351,
+    "split_seed": 731
+  },
+  "row_residual_calibration": {
+    "radius_log10": 6.611042400132433,
+    "holdout_rows_and_events": {
+      "n_rows": 32351,
+      "n_events": 2631,
+      "n_scored_rows": 32351,
+      "n_unscorable_predictions": 0,
+      "row_coverage": 0.801799017031931,
+      "all_messages_event_coverage": 0.44393766628658304,
+      "mean_interval_width_log10": 13.139646609223021,
+      "median_interval_width_log10": 13.222084800264867,
+      "critical_threshold_straddled_fraction": 0.1972118327099626,
+      "high_risk_rows": 1912,
+      "high_risk_row_coverage": 0.9450836820083682,
+      "pc_driven_critical_rows": 60,
+      "pc_driven_critical_row_coverage": 0.9833333333333333,
+      "point_estimate_pc_driven_misses": 17,
+      "point_misses_with_interval_straddling_critical": 17
+    },
+    "holdout_latest_events": {
+      "n_rows": 2629,
+      "n_events": 2629,
+      "n_scored_rows": 2629,
+      "n_unscorable_predictions": 0,
+      "row_coverage": 0.8432864206922784,
+      "all_messages_event_coverage": 0.8432864206922784,
+      "mean_interval_width_log10": 13.195640213824868,
+      "median_interval_width_log10": 13.222084800264867,
+      "critical_threshold_straddled_fraction": 0.09166983643971091,
+      "high_risk_rows": 67,
+      "high_risk_row_coverage": 0.8805970149253731,
+      "pc_driven_critical_rows": 1,
+      "pc_driven_critical_row_coverage": 1.0,
+      "point_estimate_pc_driven_misses": 1,
+      "point_misses_with_interval_straddling_critical": 1
+    }
+  },
+  "event_max_residual_calibration": {
+    "radius_log10": 12.402382760627049,
+    "holdout_rows_and_events": {
+      "n_rows": 32351,
+      "n_events": 2631,
+      "n_scored_rows": 32351,
+      "n_unscorable_predictions": 0,
+      "row_coverage": 0.9531390065222095,
+      "all_messages_event_coverage": 0.8091980235651843,
+      "mean_interval_width_log10": 23.81600135723625,
+      "median_interval_width_log10": 24.804765521254097,
+      "critical_threshold_straddled_fraction": 0.433464189669562,
+      "high_risk_rows": 1912,
+      "high_risk_row_coverage": 0.9900627615062761,
+      "pc_driven_critical_rows": 60,
+      "pc_driven_critical_row_coverage": 1.0,
+      "point_estimate_pc_driven_misses": 17,
+      "point_misses_with_interval_straddling_critical": 17
+    },
+    "holdout_latest_events": {
+      "n_rows": 2629,
+      "n_events": 2629,
+      "n_scored_rows": 2629,
+      "n_unscorable_predictions": 0,
+      "row_coverage": 0.9657664511220997,
+      "all_messages_event_coverage": 0.9657664511220997,
+      "mean_interval_width_log10": 24.367002859893276,
+      "median_interval_width_log10": 24.804765521254097,
+      "critical_threshold_straddled_fraction": 0.2590338531761126,
+      "high_risk_rows": 67,
+      "high_risk_row_coverage": 0.9850746268656716,
+      "pc_driven_critical_rows": 1,
+      "pc_driven_critical_row_coverage": 1.0,
+      "point_estimate_pc_driven_misses": 1,
+      "point_misses_with_interval_straddling_critical": 1
+    }
+  },
+  "limits": [
+    "Exploratory same-message risk intervals, not probabilities of collision or an operational safety guarantee.",
+    "The holdout was previously inspected; the weighted model configuration was selected during prior development.",
+    "Calibration and fitting event groups here do not overlap, but the selected historical sample may not be exchangeable with deployment data.",
+    "Row-residual calibration does not establish event-cluster coverage; event-max calibration covers all observed messages in an event under exchangeability assumptions.",
+    "Test-file labels were not read; the original challenge's future final-risk target was not evaluated.",
+    "A substantial proportion of labels equal -30; the floor's semantics are not verified and heavily affect log-space intervals."
+  ]
+}

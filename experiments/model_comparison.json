@@ -1,0 +1,281 @@
+{
+  "reference": "Reconstructed prior unweighted histogram gradient-boosting configuration, refit on the original train and validation event groups.",
+  "current_model_sha256": "714907c6b95a69cb19da79e2df97a61f6ba22f2488e9fa063778b514636bdde1",
+  "limits": [
+    "This holdout has been inspected previously; this is an exploratory same-sample comparison, not a fresh blind evaluation.",
+    "The current configuration was selected during development; performance on independent data is unknown.",
+    "Both models estimate same-message reported log-risk. The supplied test risk labels were not read."
+  ],
+  "holdout_rows": {
+    "reference": {
+      "n_rows": 32351,
+      "n_events": 2631,
+      "n_valid_truth_rows": 32351,
+      "n_scored_rows": 32351,
+      "n_unscorable_predictions_valid_truth": 0,
+      "mae_log10": 3.7683203824756615,
+      "rmse_log10": 5.386487115296398,
+      "critical_recall": 0.992744860943168,
+      "critical_precision": 0.9636150234741784,
+      "critical_true": 2481,
+      "critical_tp": 2463,
+      "critical_fn": 18,
+      "critical_fp": 93,
+      "risk_only_critical_recall": 0.4129032258064516,
+      "risk_only_critical_true": 155,
+      "risk_only_critical_fn": 91,
+      "risk_only_critical_unscorable": 0,
+      "pc_driven_critical_recall": 0.7,
+      "pc_driven_critical_precision": 0.3111111111111111,
+      "pc_driven_critical_true": 60,
+      "pc_driven_critical_tp": 42,
+      "pc_driven_critical_fn": 18,
+      "pc_driven_critical_fp": 93,
+      "pc_driven_predicted_critical": 135,
+      "pc_driven_critical_unscorable": 0,
+      "pc_driven_eligible_rows": 29930,
+      "pc_driven_critical_events": 15,
+      "mae_log10_risk_ge_minus6": 2.8163474780160875,
+      "n_risk_ge_minus6": 1912,
+      "n_risk_ge_minus6_truth": 1912,
+      "n_risk_ge_minus6_unscorable": 0,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2463,
+            16,
+            2,
+            0
+          ],
+          [
+            78,
+            6084,
+            458,
+            0
+          ],
+          [
+            15,
+            72,
+            23163,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "current": {
+      "n_rows": 32351,
+      "n_events": 2631,
+      "n_valid_truth_rows": 32351,
+      "n_scored_rows": 32351,
+      "n_unscorable_predictions_valid_truth": 0,
+      "mae_log10": 3.77088220429158,
+      "rmse_log10": 5.457492404715372,
+      "critical_recall": 0.9951632406287787,
+      "critical_precision": 0.9782091917591125,
+      "critical_true": 2481,
+      "critical_tp": 2469,
+      "critical_fn": 12,
+      "critical_fp": 55,
+      "risk_only_critical_recall": 0.6709677419354839,
+      "risk_only_critical_true": 155,
+      "risk_only_critical_fn": 51,
+      "risk_only_critical_unscorable": 0,
+      "pc_driven_critical_recall": 0.8,
+      "pc_driven_critical_precision": 0.46601941747572817,
+      "pc_driven_critical_true": 60,
+      "pc_driven_critical_tp": 48,
+      "pc_driven_critical_fn": 12,
+      "pc_driven_critical_fp": 55,
+      "pc_driven_predicted_critical": 103,
+      "pc_driven_critical_unscorable": 0,
+      "pc_driven_eligible_rows": 29930,
+      "pc_driven_critical_events": 15,
+      "mae_log10_risk_ge_minus6": 1.593139100591662,
+      "n_risk_ge_minus6": 1912,
+      "n_risk_ge_minus6_truth": 1912,
+      "n_risk_ge_minus6_unscorable": 0,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2469,
+            12,
+            0,
+            0
+          ],
+          [
+            53,
+            6239,
+            328,
+            0
+          ],
+          [
+            2,
+            160,
+            23088,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    }
+  },
+  "holdout_latest_event": {
+    "reference": {
+      "n_rows": 2629,
+      "n_events": 2629,
+      "n_valid_truth_rows": 2629,
+      "n_scored_rows": 2629,
+      "n_unscorable_predictions_valid_truth": 0,
+      "mae_log10": 3.028651794290669,
+      "rmse_log10": 4.726120980824502,
+      "critical_recall": 0.9947916666666666,
+      "critical_precision": 0.9744897959183674,
+      "critical_true": 192,
+      "critical_tp": 191,
+      "critical_fn": 1,
+      "critical_fp": 5,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 3,
+      "risk_only_critical_fn": 3,
+      "risk_only_critical_unscorable": 0,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": 0.0,
+      "pc_driven_critical_true": 1,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 1,
+      "pc_driven_critical_fp": 5,
+      "pc_driven_predicted_critical": 5,
+      "pc_driven_critical_unscorable": 0,
+      "pc_driven_eligible_rows": 2438,
+      "pc_driven_critical_events": 1,
+      "mae_log10_risk_ge_minus6": 4.317609712294718,
+      "n_risk_ge_minus6": 67,
+      "n_risk_ge_minus6_truth": 67,
+      "n_risk_ge_minus6_unscorable": 0,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            191,
+            1,
+            0,
+            0
+          ],
+          [
+            5,
+            441,
+            16,
+            0
+          ],
+          [
+            0,
+            7,
+            1968,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "current": {
+      "n_rows": 2629,
+      "n_events": 2629,
+      "n_valid_truth_rows": 2629,
+      "n_scored_rows": 2629,
+      "n_unscorable_predictions_valid_truth": 0,
+      "mae_log10": 3.0886457071695466,
+      "rmse_log10": 4.7934420630378645,
+      "critical_recall": 0.9947916666666666,
+      "critical_precision": 0.9845360824742269,
+      "critical_true": 192,
+      "critical_tp": 191,
+      "critical_fn": 1,
+      "critical_fp": 3,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 3,
+      "risk_only_critical_fn": 3,
+      "risk_only_critical_unscorable": 0,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": 0.0,
+      "pc_driven_critical_true": 1,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 1,
+      "pc_driven_critical_fp": 3,
+      "pc_driven_predicted_critical": 3,
+      "pc_driven_critical_unscorable": 0,
+      "pc_driven_eligible_rows": 2438,
+      "pc_driven_critical_events": 1,
+      "mae_log10_risk_ge_minus6": 2.8393998519428045,
+      "n_risk_ge_minus6": 67,
+      "n_risk_ge_minus6_truth": 67,
+      "n_risk_ge_minus6_unscorable": 0,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            191,
+            1,
+            0,
+            0
+          ],
+          [
+            3,
+            445,
+            14,
+            0
+          ],
+          [
+            0,
+            7,
+            1968,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    }
+  }
+}

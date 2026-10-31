@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-31T03:22:56.432875+00:00",
+  "files_sha256": {
+    "risk_model.joblib": "714907c6b95a69cb19da79e2df97a61f6ba22f2488e9fa063778b514636bdde1",
+    "metrics.json": "26ac729c2b6426fc3c1ba829efa1ceceb04b7cb79c60f8cceaa6965d356bd60f",
+    "test_predictions.csv": "621318db61c512666584f94929e03cf7cd81c2238fcf13fd0eb22a16b295b011",
+    "holdout_predictions.csv": "f44da14bb115cd8456a3cefb8fb914ad405409909af35e15173339c86732d250"
+  },
+  "scope": "Checksums identify file contents; they do not independently prove model or data lineage."
+}

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Asteria guided tour</title></head><body>
+<script>
+(() => {
+  // This local component runs in Streamlit's same-origin iframe. The spotlight
+  // and controls are in the parent document so they can point to real widgets.
+  const VISITED = 'asteria.guidedTour.visited.v1';
+  const ACTIVE = 'asteria.guidedTour.active.v2';
+  const STEPS = [
+    {page:'Mission control', target:'.st-key-tour_dataset', title:'Choose your data', text:'Click Dataset to switch between the supplied test messages, held-out historical events, and your own uploaded telemetry.'},
+    {page:'Mission control', target:'.st-key-tour_risk_filter', title:'Filter the queue', text:'Click Risk tier to narrow the queue to critical, elevated, safe, or incomplete events. The time slider and event search are just below.'},
+    {page:'Mission control', target:'.st-key-tour_queue', title:'Scan the conjunction queue', text:'Read the latest available message for each event here. The table shows its tier, time to closest approach, miss distance, and estimated Pc.'},
+    {page:'Mission control', target:'.st-key-tour_event_select', title:'Pick an event', text:'Click this selector to choose an event from the filtered queue. Its encounter view and message history update together.'},
+    {page:'Mission control', target:'.st-key-tour_replay', title:'Replay message updates', text:'Drag this slider to compare earlier and later messages. The graph and event evidence update to the chosen snapshot. These are successive estimates at closest approach, not a simulated orbit.'},
+    {page:'Mission control', target:'.st-key-tour_geometry', title:'Explore the encounter', text:'Drag this 3D graph to rotate the relative position at closest approach. The rings are distance guides, not reconstructed orbits.'},
+    {page:'Mission control', target:'.st-key-tour_history', title:'Follow the message history', text:'Look at this graph to compare model-estimated risk in mint with recorded miss distance in blue as messages approach TCA. It does not forecast future messages.'},
+    {page:null, target:'.st-key-tour_navigation', title:'Open the model evidence', text:'Use this navigation to open Model evidence. Select it now, or choose Next and the tour will open it for you.'},
+    {page:'Model evidence', target:'.st-key-tour_error_chart', title:'Compare model and baseline', text:'This graph compares held-out log-risk error with the median baseline. Lower error is better; check the numbers rather than the appearance alone.'},
+    {page:'Model evidence', target:'.st-key-tour_confusion_chart', title:'Inspect classification outcomes', text:'Look across each row of this matrix to see the predicted tiers for a reference tier from the historical message. Risk-only recall and missed cases reveal important limits.'}
+  ];
+  let doc, win;
+  try { win = window.parent; doc = win.document; } catch (_) { return; }
+  let active = false, current = 0, previousLaunch = null, retryTimer = null;
+  let root, spotlight, card, title, description, count, progress, back, next, missing;
+  let lastElement = null, needsScroll = false, pageRequested = null;
+  const send = (type, fields={}) => win.postMessage({isStreamlitMessage:true, type, ...fields}, '*');
+  const read = (storage, key) => { try { return storage.getItem(key); } catch (_) { return null; } };
+  const write = (storage, key, value) => { try { storage.setItem(key,value); } catch (_) {} };
+  const remove = (storage, key) => { try { storage.removeItem(key); } catch (_) {} };
+  const save = () => write(window.sessionStorage, ACTIVE, JSON.stringify({active,current}));
+  function mount() {
+    const stale = doc.getElementById('asteria-guided-tour-root');
+    if (stale) stale.remove();
+    root = doc.createElement('div'); root.id = 'asteria-guided-tour-root';
+    root.innerHTML = `<style>
+      #asteria-guided-tour-root {position:fixed;inset:0;z-index:999999;pointer-events:none;font-family:'Segoe UI',sans-serif;}
+      #asteria-guided-tour-root * {box-sizing:border-box;}
+      #asteria-tour-spotlight {position:fixed;border:2px solid #79f5dd;border-radius:10px;box-shadow:0 0 0 9999px rgba(2,8,16,.64),0 0 22px #66efd080;pointer-events:none;transition:top .16s,left .16s,width .16s,height .16s;}
+      #asteria-tour-card {position:fixed;width:min(340px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;pointer-events:auto;background:#0c1923;border:1px solid #47746e;border-radius:14px;box-shadow:0 14px 45px #0009;color:#eaf9f7;padding:18px;}
+      #asteria-tour-count {color:#78e8d4;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;}
+      #asteria-tour-progress {height:3px;background:#28423f;border-radius:3px;margin:10px 0 15px;}
+      #asteria-tour-progress > div {height:100%;background:#76efd5;border-radius:3px;}
+      #asteria-tour-title {font-size:19px;line-height:1.2;font-weight:700;margin:0 0 9px;}
+      #asteria-tour-description {font-size:13px;line-height:1.5;color:#bed1d1;margin:0;}
+      #asteria-tour-missing {font-size:12px;color:#f4c386;line-height:1.4;margin:10px 0 0;}
+      #asteria-tour-actions {display:flex;gap:8px;align-items:center;margin-top:17px;}
+      #asteria-tour-actions button {font:600 12px 'Segoe UI',sans-serif;border-radius:7px;padding:8px 11px;cursor:pointer;color:#c1f5eb;border:1px solid #426962;background:#132e2e;}
+      #asteria-tour-actions button:hover {border-color:#83f3de;background:#1b423e;}
+      #asteria-tour-actions button:focus-visible {outline:2px solid white;outline-offset:2px;}
+      #asteria-tour-actions button:disabled {opacity:.45;cursor:default;}
+      #asteria-tour-actions #asteria-tour-skip {margin-right:auto;background:transparent;border-color:transparent;color:#9cb5b5;}
+      #asteria-tour-actions #asteria-tour-next {background:#6be6ce;border-color:#6be6ce;color:#06201d;}
+    </style><div id="asteria-tour-spotlight" aria-hidden="true"></div>
+    <section id="asteria-tour-card" role="dialog" aria-label="Guided tour" aria-live="polite">
+      <div id="asteria-tour-count"></div><div id="asteria-tour-progress" aria-hidden="true"><div></div></div>
+      <h2 id="asteria-tour-title"></h2><p id="asteria-tour-description"></p><p id="asteria-tour-missing" hidden></p>
+      <div id="asteria-tour-actions"><button id="asteria-tour-skip" type="button">Skip tour</button><button id="asteria-tour-back" type="button">Back</button><button id="asteria-tour-next" type="button">Next</button></div>
+    </section>`;
+    doc.body.appendChild(root);
+    spotlight = root.querySelector('#asteria-tour-spotlight'); card = root.querySelector('#asteria-tour-card');
+    title = root.querySelector('#asteria-tour-title'); description = root.querySelector('#asteria-tour-description');
+    count = root.querySelector('#asteria-tour-count'); progress = root.querySelector('#asteria-tour-progress > div');
+    back = root.querySelector('#asteria-tour-back'); next = root.querySelector('#asteria-tour-next'); missing = root.querySelector('#asteria-tour-missing');
+    root.querySelector('#asteria-tour-skip').onclick = close;
+    back.onclick = () => { if(current > 0) go(current - 1); };
+    next.onclick = () => { if(current === STEPS.length-1) close(); else go(current+1); };
+  }
+  function ensurePage(name) {
+    const nav = doc.querySelector('.st-key-tour_navigation');
+    if (!nav) return false;
+    const labels = [...nav.querySelectorAll('label')];
+    const wanted = labels.find(el => el.textContent.trim() === name);
+    if (!wanted) return false;
+    const radio = wanted.querySelector('input[type="radio"]');
+    if (radio && !radio.checked && pageRequested !== name) { pageRequested=name; wanted.click(); return false; }
+    return !!radio && radio.checked;
+  }
+  function openSidebarIfNeeded(target) {
+    if (!target.startsWith('.st-key-tour_')) return;
+    if (!['.st-key-tour_dataset','.st-key-tour_risk_filter','.st-key-tour_navigation'].includes(target)) return;
+    const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+    const box = sidebar && sidebar.getBoundingClientRect();
+    if (box && box.width > 10 && box.right > 0) return;
+    const toggle = doc.querySelector('[data-testid="stSidebarCollapsedControl"] button, [data-testid="stSidebarCollapsedControl"]');
+    if (toggle) toggle.click();
+  }
+  function position() {
+    if (!active || !root || !root.isConnected) return;
+    const step = STEPS[current];
+    if (step.page && !ensurePage(step.page)) { retry(); return; }
+    pageRequested = null;
+    openSidebarIfNeeded(step.target);
+    const target = doc.querySelector(step.target);
+    const bounds = target && target.getBoundingClientRect();
+    if (!bounds || bounds.width < 1 || bounds.height < 1) {
+      spotlight.style.display='none'; missing.hidden=false;
+      missing.textContent='This item is not currently visible. Check the dataset and filters, or continue to the next step.';
+      card.style.left='12px'; card.style.top='12px'; retry(); return;
+    }
+    if (needsScroll || target !== lastElement) {
+      needsScroll=false; lastElement=target;
+      target.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+    }
+    const r = target.getBoundingClientRect(), pad=5, vw=win.innerWidth, vh=win.innerHeight;
+    const left=Math.max(4,r.left-pad), top=Math.max(4,r.top-pad), right=Math.min(vw-4,r.right+pad), bottom=Math.min(vh-4,r.bottom+pad);
+    if(right <= left || bottom <= top) { retry(); return; }
+    spotlight.style.display='block'; missing.hidden=true;
+    Object.assign(spotlight.style,{left:left+'px',top:top+'px',width:(right-left)+'px',height:(bottom-top)+'px'});
+    const cw=card.offsetWidth, ch=card.offsetHeight, gap=14;
+    let x, y;
+    if (right + gap + cw <= vw - 12) { x=right+gap; y=top; }
+    else if (left-gap-cw >= 12) { x=left-gap-cw; y=top; }
+    else if (bottom+gap+ch <= vh-12) { x=Math.max(12,Math.min(left,vw-cw-12)); y=bottom+gap; }
+    else if (top-gap-ch >= 12) { x=Math.max(12,Math.min(left,vw-cw-12)); y=top-gap-ch; }
+    else { x=Math.max(12,vw-cw-12); y=Math.max(12,vh-ch-12); }
+    card.style.left=Math.round(x)+'px'; card.style.top=Math.round(Math.max(12,Math.min(y,vh-ch-12)))+'px';
+  }
+  function retry() { if (!retryTimer) retryTimer=window.setTimeout(() => {retryTimer=null;position();},180); }
+  function go(index) {
+    current=index; pageRequested=null; lastElement=null; needsScroll=true; save();
+    const s=STEPS[current]; count.textContent=`Guided tour · ${current+1} / ${STEPS.length}`;
+    title.textContent=s.title; description.textContent=s.text; progress.style.width=((current+1)/STEPS.length*100)+'%';
+    back.disabled=current===0; next.textContent=current===STEPS.length-1?'Finish':'Next';
+    missing.hidden=true; position();
+  }
+  function open(index=0) { active=true; mount(); go(index); }
+  function close() { active=false; remove(window.sessionStorage,ACTIVE); if(root) root.remove(); }
+  win.addEventListener('resize',position); win.addEventListener('scroll',position,true);
+  const onKeyDown = event => {
+    // The same key closes Streamlit select menus: leave the tour open in that case.
+    if (!active || event.key !== 'Escape' || event.defaultPrevented) return;
+    const expanded = doc.querySelector('[role="combobox"][aria-expanded="true"], [role="listbox"], [data-baseweb="popover"]');
+    if (expanded && expanded.getBoundingClientRect().width > 0) return;
+    close();
+  };
+  doc.addEventListener('keydown',onKeyDown,true);
+  const observer = new MutationObserver(() => { if(active) retry(); });
+  observer.observe(doc.body,{childList:true,subtree:true});
+  window.addEventListener('unload', () => {
+    observer.disconnect();
+    win.removeEventListener('resize',position); win.removeEventListener('scroll',position,true);
+    doc.removeEventListener('keydown',onKeyDown,true);
+    if (retryTimer) window.clearTimeout(retryTimer);
+    if (root) root.remove();
+  });
+  window.addEventListener('message', event => {
+    if (event.source !== win || event.data?.type !== 'streamlit:render') return;
+    const launch=Number(event.data.args?.launch || 0);
+    if (previousLaunch === null) {
+      previousLaunch=launch;
+      const previous=read(window.sessionStorage,ACTIVE);
+      let saved=null; try { saved=JSON.parse(previous); } catch (_) {}
+      const visited=read(window.localStorage,VISITED)==='true';
+      write(window.localStorage,VISITED,'true');
+      if(saved?.active && Number.isInteger(saved.current) && saved.current>=0 && saved.current<STEPS.length) open(saved.current);
+      else if(launch>0 || !visited) open();
+    } else if(launch !== previousLaunch) { previousLaunch=launch; open(); }
+    send('streamlit:setFrameHeight',{height:0});
+  });
+  send('streamlit:componentReady',{apiVersion:1});
+  send('streamlit:setFrameHeight',{height:0});
+})();
+</script></body></html>

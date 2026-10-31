@@ -1,0 +1,1659 @@
+{
+  "model": {
+    "name": "Risk-weighted histogram gradient-boosted regressor",
+    "target": "risk recorded on the same message (log10 Pc)",
+    "features": [
+      "time_to_tca",
+      "miss_distance",
+      "relative_speed",
+      "relative_position_r",
+      "relative_position_t",
+      "relative_position_n",
+      "c_object_type",
+      "c_sigma_r",
+      "t_sigma_r",
+      "max_risk_estimate",
+      "F10",
+      "AP"
+    ],
+    "selection": "Median baseline if unweighted model has no validation MAE improvement; weighted candidate must improve Pc-driven recall and relevant-risk MAE, retain precision within 5 percentage points, and keep overall MAE within 125% of unweighted model."
+  },
+  "data": {
+    "train_rows": 162634,
+    "train_events": 13154,
+    "test_rows": 24484,
+    "test_events": 2167,
+    "dropped_invalid_training_labels": 0
+  },
+  "split": {
+    "train_events": 7892,
+    "validation_events": 2631,
+    "holdout_events": 2631,
+    "seed": 42,
+    "method": "GroupShuffleSplit by event ID within the training file; 60/20/20 events"
+  },
+  "validation": {
+    "baseline": {
+      "n_rows": 32505,
+      "n_events": 2631,
+      "mae_log10": 9.463764739078844,
+      "rmse_log10": 10.090811843659095,
+      "critical_recall": 0.9819742489270387,
+      "critical_precision": 1.0,
+      "critical_true": 2330,
+      "critical_tp": 2288,
+      "critical_fn": 42,
+      "critical_fp": 0,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 103,
+      "risk_only_critical_fn": 103,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": null,
+      "pc_driven_critical_true": 42,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 42,
+      "pc_driven_critical_fp": 0,
+      "pc_driven_eligible_rows": 30217,
+      "pc_driven_critical_events": 14,
+      "mae_log10_risk_ge_minus6": 12.79224837396552,
+      "n_risk_ge_minus6": 2158,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2288,
+            36,
+            6,
+            0
+          ],
+          [
+            0,
+            6461,
+            951,
+            0
+          ],
+          [
+            0,
+            0,
+            22763,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "model": {
+      "n_rows": 32505,
+      "n_events": 2631,
+      "mae_log10": 3.7522321481624736,
+      "rmse_log10": 5.358722018299075,
+      "critical_recall": 0.9879828326180258,
+      "critical_precision": 0.9512396694214876,
+      "critical_true": 2330,
+      "critical_tp": 2302,
+      "critical_fn": 28,
+      "critical_fp": 118,
+      "risk_only_critical_recall": 0.3106796116504854,
+      "risk_only_critical_true": 103,
+      "risk_only_critical_fn": 71,
+      "pc_driven_critical_recall": 0.3333333333333333,
+      "pc_driven_critical_precision": 0.10606060606060606,
+      "pc_driven_critical_true": 42,
+      "pc_driven_critical_tp": 14,
+      "pc_driven_critical_fn": 28,
+      "pc_driven_critical_fp": 118,
+      "pc_driven_eligible_rows": 30217,
+      "pc_driven_critical_events": 14,
+      "mae_log10_risk_ge_minus6": 2.739354895581548,
+      "n_risk_ge_minus6": 2158,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2302,
+            27,
+            1,
+            0
+          ],
+          [
+            114,
+            6669,
+            629,
+            0
+          ],
+          [
+            4,
+            85,
+            22674,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "without_max_risk_estimate": {
+      "n_rows": 32505,
+      "n_events": 2631,
+      "mae_log10": 4.104108246468249,
+      "rmse_log10": 5.793463969666542,
+      "critical_recall": 0.9828326180257511,
+      "critical_precision": 0.9939236111111112,
+      "critical_true": 2330,
+      "critical_tp": 2290,
+      "critical_fn": 40,
+      "critical_fp": 14,
+      "risk_only_critical_recall": 0.02912621359223301,
+      "risk_only_critical_true": 103,
+      "risk_only_critical_fn": 100,
+      "pc_driven_critical_recall": 0.047619047619047616,
+      "pc_driven_critical_precision": 0.125,
+      "pc_driven_critical_true": 42,
+      "pc_driven_critical_tp": 2,
+      "pc_driven_critical_fn": 40,
+      "pc_driven_critical_fp": 14,
+      "pc_driven_eligible_rows": 30217,
+      "pc_driven_critical_events": 14,
+      "mae_log10_risk_ge_minus6": 4.584790676188189,
+      "n_risk_ge_minus6": 2158,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2290,
+            35,
+            5,
+            0
+          ],
+          [
+            14,
+            6482,
+            916,
+            0
+          ],
+          [
+            0,
+            14,
+            22749,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "risk_weighted_experiment": {
+      "n_rows": 32505,
+      "n_events": 2631,
+      "mae_log10": 3.818286612307081,
+      "rmse_log10": 5.465549298008584,
+      "critical_recall": 0.9918454935622317,
+      "critical_precision": 0.9689727463312369,
+      "critical_true": 2330,
+      "critical_tp": 2311,
+      "critical_fn": 19,
+      "critical_fp": 74,
+      "risk_only_critical_recall": 0.44660194174757284,
+      "risk_only_critical_true": 103,
+      "risk_only_critical_fn": 57,
+      "pc_driven_critical_recall": 0.5476190476190477,
+      "pc_driven_critical_precision": 0.23711340206185566,
+      "pc_driven_critical_true": 42,
+      "pc_driven_critical_tp": 23,
+      "pc_driven_critical_fn": 19,
+      "pc_driven_critical_fp": 74,
+      "pc_driven_eligible_rows": 30217,
+      "pc_driven_critical_events": 14,
+      "mae_log10_risk_ge_minus6": 1.778989769050538,
+      "n_risk_ge_minus6": 2158,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2311,
+            18,
+            1,
+            0
+          ],
+          [
+            73,
+            6882,
+            457,
+            0
+          ],
+          [
+            1,
+            177,
+            22585,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "risk_weighted_selected": true,
+    "distance_only_rows": {
+      "n_rows": 32505,
+      "n_events": 2631,
+      "critical_recall": 0.9819742489270387,
+      "critical_precision": 1.0,
+      "critical_true": 2330,
+      "critical_tp": 2288,
+      "critical_fn": 42,
+      "critical_fp": 0,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 103,
+      "risk_only_critical_fn": 103,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": null,
+      "pc_driven_critical_true": 42,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 42,
+      "pc_driven_critical_fp": 0,
+      "pc_driven_eligible_rows": 30217,
+      "pc_driven_critical_events": 14,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2288,
+            36,
+            6,
+            0
+          ],
+          [
+            0,
+            6461,
+            951,
+            0
+          ],
+          [
+            0,
+            0,
+            22763,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "description": "Distance-only tiers; does not predict Pc."
+    }
+  },
+  "holdout": {
+    "rows": {
+      "n_rows": 32351,
+      "n_events": 2631,
+      "mae_log10": 3.77088220429158,
+      "rmse_log10": 5.457492404715372,
+      "critical_recall": 0.9951632406287787,
+      "critical_precision": 0.9782091917591125,
+      "critical_true": 2481,
+      "critical_tp": 2469,
+      "critical_fn": 12,
+      "critical_fp": 55,
+      "risk_only_critical_recall": 0.6709677419354839,
+      "risk_only_critical_true": 155,
+      "risk_only_critical_fn": 51,
+      "pc_driven_critical_recall": 0.8,
+      "pc_driven_critical_precision": 0.46601941747572817,
+      "pc_driven_critical_true": 60,
+      "pc_driven_critical_tp": 48,
+      "pc_driven_critical_fn": 12,
+      "pc_driven_critical_fp": 55,
+      "pc_driven_eligible_rows": 29930,
+      "pc_driven_critical_events": 15,
+      "mae_log10_risk_ge_minus6": 1.593139100591662,
+      "n_risk_ge_minus6": 1912,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2469,
+            12,
+            0,
+            0
+          ],
+          [
+            53,
+            6239,
+            328,
+            0
+          ],
+          [
+            2,
+            160,
+            23088,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "pc_driven_recall_event_bootstrap95": {
+        "lower": 0.6326262083780881,
+        "upper": 0.9264795552367289,
+        "positive_events": 15,
+        "events_resampled": 2631,
+        "valid_resamples": 2000,
+        "requested_resamples": 2000,
+        "method": "Event-cluster bootstrap on the selected, previously inspected historical holdout; not a population guarantee."
+      }
+    },
+    "baseline_rows": {
+      "n_rows": 32351,
+      "n_events": 2631,
+      "mae_log10": 9.459510758523633,
+      "rmse_log10": 10.114251550563536,
+      "critical_recall": 0.9758162031438936,
+      "critical_precision": 1.0,
+      "critical_true": 2481,
+      "critical_tp": 2421,
+      "critical_fn": 60,
+      "critical_fp": 0,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 155,
+      "risk_only_critical_fn": 155,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": null,
+      "pc_driven_critical_true": 60,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 60,
+      "pc_driven_critical_fp": 0,
+      "pc_driven_eligible_rows": 29930,
+      "pc_driven_critical_events": 15,
+      "mae_log10_risk_ge_minus6": 12.763949941134412,
+      "n_risk_ge_minus6": 1912,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2421,
+            57,
+            3,
+            0
+          ],
+          [
+            0,
+            5917,
+            703,
+            0
+          ],
+          [
+            0,
+            0,
+            23250,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "latest_event": {
+      "n_rows": 2629,
+      "n_events": 2629,
+      "mae_log10": 3.0886457071695466,
+      "rmse_log10": 4.7934420630378645,
+      "critical_recall": 0.9947916666666666,
+      "critical_precision": 0.9845360824742269,
+      "critical_true": 192,
+      "critical_tp": 191,
+      "critical_fn": 1,
+      "critical_fp": 3,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 3,
+      "risk_only_critical_fn": 3,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": 0.0,
+      "pc_driven_critical_true": 1,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 1,
+      "pc_driven_critical_fp": 3,
+      "pc_driven_eligible_rows": 2438,
+      "pc_driven_critical_events": 1,
+      "mae_log10_risk_ge_minus6": 2.8393998519428045,
+      "n_risk_ge_minus6": 67,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            191,
+            1,
+            0,
+            0
+          ],
+          [
+            3,
+            445,
+            14,
+            0
+          ],
+          [
+            0,
+            7,
+            1968,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "pc_driven_recall_event_bootstrap95": null
+    },
+    "baseline_latest_event": {
+      "n_rows": 2629,
+      "n_events": 2629,
+      "mae_log10": 10.452687469766635,
+      "rmse_log10": 10.891014244425287,
+      "critical_recall": 0.9947916666666666,
+      "critical_precision": 1.0,
+      "critical_true": 192,
+      "critical_tp": 191,
+      "critical_fn": 1,
+      "critical_fp": 0,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 3,
+      "risk_only_critical_fn": 3,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": null,
+      "pc_driven_critical_true": 1,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 1,
+      "pc_driven_critical_fp": 0,
+      "pc_driven_eligible_rows": 2438,
+      "pc_driven_critical_events": 1,
+      "mae_log10_risk_ge_minus6": 12.534842466096533,
+      "n_risk_ge_minus6": 67,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            191,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            434,
+            28,
+            0
+          ],
+          [
+            0,
+            0,
+            1975,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "at_least_two_days": {
+      "n_rows": 22225,
+      "n_events": 2377,
+      "mae_log10": 4.0243093007573485,
+      "rmse_log10": 5.644867625953278,
+      "critical_recall": 0.995958429561201,
+      "critical_precision": 0.9701912260967379,
+      "critical_true": 1732,
+      "critical_tp": 1725,
+      "critical_fn": 7,
+      "critical_fp": 53,
+      "risk_only_critical_recall": 0.7633587786259542,
+      "risk_only_critical_true": 131,
+      "risk_only_critical_fn": 31,
+      "pc_driven_critical_recall": 0.8727272727272727,
+      "pc_driven_critical_precision": 0.4752475247524752,
+      "pc_driven_critical_true": 55,
+      "pc_driven_critical_tp": 48,
+      "pc_driven_critical_fn": 7,
+      "pc_driven_critical_fp": 53,
+      "pc_driven_eligible_rows": 20548,
+      "pc_driven_critical_events": 14,
+      "mae_log10_risk_ge_minus6": 1.3228797390527827,
+      "n_risk_ge_minus6": 1706,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            1725,
+            7,
+            0,
+            0
+          ],
+          [
+            51,
+            4349,
+            296,
+            0
+          ],
+          [
+            2,
+            157,
+            15638,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "baseline_at_least_two_days": {
+      "n_rows": 22225,
+      "n_events": 2377,
+      "mae_log10": 8.922532594478,
+      "rmse_log10": 9.645578560621544,
+      "critical_recall": 0.9682448036951501,
+      "critical_precision": 1.0,
+      "critical_true": 1732,
+      "critical_tp": 1677,
+      "critical_fn": 55,
+      "critical_fp": 0,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 131,
+      "risk_only_critical_fn": 131,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": null,
+      "pc_driven_critical_true": 55,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 55,
+      "pc_driven_critical_fp": 0,
+      "pc_driven_eligible_rows": 20548,
+      "pc_driven_critical_events": 14,
+      "mae_log10_risk_ge_minus6": 12.760281056378199,
+      "n_risk_ge_minus6": 1706,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            1677,
+            52,
+            3,
+            0
+          ],
+          [
+            0,
+            4030,
+            666,
+            0
+          ],
+          [
+            0,
+            0,
+            15797,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "distance_only_rows": {
+      "n_rows": 32351,
+      "n_events": 2631,
+      "critical_recall": 0.9758162031438936,
+      "critical_precision": 1.0,
+      "critical_true": 2481,
+      "critical_tp": 2421,
+      "critical_fn": 60,
+      "critical_fp": 0,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 155,
+      "risk_only_critical_fn": 155,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": null,
+      "pc_driven_critical_true": 60,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 60,
+      "pc_driven_critical_fp": 0,
+      "pc_driven_eligible_rows": 29930,
+      "pc_driven_critical_events": 15,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            2421,
+            57,
+            3,
+            0
+          ],
+          [
+            0,
+            5917,
+            703,
+            0
+          ],
+          [
+            0,
+            0,
+            23250,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "description": "Distance-only tiers; does not predict Pc."
+    },
+    "distance_only_latest_event": {
+      "n_rows": 2629,
+      "n_events": 2629,
+      "critical_recall": 0.9947916666666666,
+      "critical_precision": 1.0,
+      "critical_true": 192,
+      "critical_tp": 191,
+      "critical_fn": 1,
+      "critical_fp": 0,
+      "risk_only_critical_recall": 0.0,
+      "risk_only_critical_true": 3,
+      "risk_only_critical_fn": 3,
+      "pc_driven_critical_recall": 0.0,
+      "pc_driven_critical_precision": null,
+      "pc_driven_critical_true": 1,
+      "pc_driven_critical_tp": 0,
+      "pc_driven_critical_fn": 1,
+      "pc_driven_critical_fp": 0,
+      "pc_driven_eligible_rows": 2438,
+      "pc_driven_critical_events": 1,
+      "confusion_matrix": {
+        "labels": [
+          "Critical",
+          "Elevated",
+          "Safe",
+          "Incomplete"
+        ],
+        "values": [
+          [
+            191,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            434,
+            28,
+            0
+          ],
+          [
+            0,
+            0,
+            1975,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      },
+      "description": "Distance-only tiers; does not predict Pc."
+    },
+    "time_to_tca_buckets": [
+      {
+        "bucket": "0\u20131 days",
+        "start_days": 0,
+        "end_days": 1,
+        "model": {
+          "n_rows": 5148,
+          "n_events": 1904,
+          "mae_log10": 2.8645367762475322,
+          "rmse_log10": 4.690693863940107,
+          "critical_recall": 0.9946380697050938,
+          "critical_precision": 1.0,
+          "critical_true": 373,
+          "critical_tp": 371,
+          "critical_fn": 2,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.09090909090909091,
+          "risk_only_critical_true": 11,
+          "risk_only_critical_fn": 10,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 2,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 2,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 4777,
+          "pc_driven_critical_events": 2,
+          "mae_log10_risk_ge_minus6": 4.158485813109117,
+          "n_risk_ge_minus6": 74,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                371,
+                2,
+                0,
+                0
+              ],
+              [
+                0,
+                950,
+                10,
+                0
+              ],
+              [
+                0,
+                0,
+                3815,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "distance_only": {
+          "n_rows": 5148,
+          "n_events": 1904,
+          "critical_recall": 0.9946380697050938,
+          "critical_precision": 1.0,
+          "critical_true": 373,
+          "critical_tp": 371,
+          "critical_fn": 2,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.0,
+          "risk_only_critical_true": 11,
+          "risk_only_critical_fn": 11,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 2,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 2,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 4777,
+          "pc_driven_critical_events": 2,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                371,
+                2,
+                0,
+                0
+              ],
+              [
+                0,
+                950,
+                10,
+                0
+              ],
+              [
+                0,
+                0,
+                3815,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          },
+          "description": "Distance-only tiers; does not predict Pc."
+        }
+      },
+      {
+        "bucket": "1\u20132 days",
+        "start_days": 1,
+        "end_days": 2,
+        "model": {
+          "n_rows": 4908,
+          "n_events": 1841,
+          "mae_log10": 3.588064687950248,
+          "rmse_log10": 5.350229958172653,
+          "critical_recall": 0.9919137466307277,
+          "critical_precision": 0.9945945945945946,
+          "critical_true": 371,
+          "critical_tp": 368,
+          "critical_fn": 3,
+          "critical_fp": 2,
+          "risk_only_critical_recall": 0.25,
+          "risk_only_critical_true": 12,
+          "risk_only_critical_fn": 9,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": 0.0,
+          "pc_driven_critical_true": 3,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 3,
+          "pc_driven_critical_fp": 2,
+          "pc_driven_eligible_rows": 4540,
+          "pc_driven_critical_events": 2,
+          "mae_log10_risk_ge_minus6": 3.6521787530786147,
+          "n_risk_ge_minus6": 130,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                368,
+                3,
+                0,
+                0
+              ],
+              [
+                2,
+                926,
+                22,
+                0
+              ],
+              [
+                0,
+                3,
+                3584,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "distance_only": {
+          "n_rows": 4908,
+          "n_events": 1841,
+          "critical_recall": 0.9919137466307277,
+          "critical_precision": 1.0,
+          "critical_true": 371,
+          "critical_tp": 368,
+          "critical_fn": 3,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.0,
+          "risk_only_critical_true": 12,
+          "risk_only_critical_fn": 12,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 3,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 3,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 4540,
+          "pc_driven_critical_events": 2,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                368,
+                3,
+                0,
+                0
+              ],
+              [
+                0,
+                923,
+                27,
+                0
+              ],
+              [
+                0,
+                0,
+                3587,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          },
+          "description": "Distance-only tiers; does not predict Pc."
+        }
+      },
+      {
+        "bucket": "2\u20133 days",
+        "start_days": 2,
+        "end_days": 3,
+        "model": {
+          "n_rows": 4721,
+          "n_events": 1794,
+          "mae_log10": 4.259104422348174,
+          "rmse_log10": 5.921353029598427,
+          "critical_recall": 1.0,
+          "critical_precision": 0.968,
+          "critical_true": 363,
+          "critical_tp": 363,
+          "critical_fn": 0,
+          "critical_fp": 12,
+          "risk_only_critical_recall": 0.631578947368421,
+          "risk_only_critical_true": 19,
+          "risk_only_critical_fn": 7,
+          "pc_driven_critical_recall": 1.0,
+          "pc_driven_critical_precision": 0.3333333333333333,
+          "pc_driven_critical_true": 6,
+          "pc_driven_critical_tp": 6,
+          "pc_driven_critical_fn": 0,
+          "pc_driven_critical_fp": 12,
+          "pc_driven_eligible_rows": 4364,
+          "pc_driven_critical_events": 5,
+          "mae_log10_risk_ge_minus6": 2.241106044326057,
+          "n_risk_ge_minus6": 198,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                363,
+                0,
+                0,
+                0
+              ],
+              [
+                12,
+                861,
+                35,
+                0
+              ],
+              [
+                0,
+                9,
+                3441,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "distance_only": {
+          "n_rows": 4721,
+          "n_events": 1794,
+          "critical_recall": 0.9834710743801653,
+          "critical_precision": 1.0,
+          "critical_true": 363,
+          "critical_tp": 357,
+          "critical_fn": 6,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.0,
+          "risk_only_critical_true": 19,
+          "risk_only_critical_fn": 19,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 6,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 6,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 4364,
+          "pc_driven_critical_events": 5,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                357,
+                6,
+                0,
+                0
+              ],
+              [
+                0,
+                853,
+                55,
+                0
+              ],
+              [
+                0,
+                0,
+                3450,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          },
+          "description": "Distance-only tiers; does not predict Pc."
+        }
+      },
+      {
+        "bucket": "3\u20134 days",
+        "start_days": 3,
+        "end_days": 4,
+        "model": {
+          "n_rows": 4589,
+          "n_events": 1750,
+          "mae_log10": 4.594909965647487,
+          "rmse_log10": 6.1914629682612965,
+          "critical_recall": 0.9889807162534435,
+          "critical_precision": 0.9650537634408602,
+          "critical_true": 363,
+          "critical_tp": 359,
+          "critical_fn": 4,
+          "critical_fp": 13,
+          "risk_only_critical_recall": 0.5454545454545454,
+          "risk_only_critical_true": 22,
+          "risk_only_critical_fn": 10,
+          "pc_driven_critical_recall": 0.6363636363636364,
+          "pc_driven_critical_precision": 0.35,
+          "pc_driven_critical_true": 11,
+          "pc_driven_critical_tp": 7,
+          "pc_driven_critical_fn": 4,
+          "pc_driven_critical_fp": 13,
+          "pc_driven_eligible_rows": 4237,
+          "pc_driven_critical_events": 5,
+          "mae_log10_risk_ge_minus6": 1.6412156493155354,
+          "n_risk_ge_minus6": 270,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                359,
+                4,
+                0,
+                0
+              ],
+              [
+                12,
+                836,
+                43,
+                0
+              ],
+              [
+                1,
+                24,
+                3310,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "distance_only": {
+          "n_rows": 4589,
+          "n_events": 1750,
+          "critical_recall": 0.9696969696969697,
+          "critical_precision": 1.0,
+          "critical_true": 363,
+          "critical_tp": 352,
+          "critical_fn": 11,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.0,
+          "risk_only_critical_true": 22,
+          "risk_only_critical_fn": 22,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 11,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 11,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 4237,
+          "pc_driven_critical_events": 5,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                352,
+                8,
+                3,
+                0
+              ],
+              [
+                0,
+                807,
+                84,
+                0
+              ],
+              [
+                0,
+                0,
+                3335,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          },
+          "description": "Distance-only tiers; does not predict Pc."
+        }
+      },
+      {
+        "bucket": "4\u20135 days",
+        "start_days": 4,
+        "end_days": 5,
+        "model": {
+          "n_rows": 4428,
+          "n_events": 1749,
+          "mae_log10": 4.53054177022858,
+          "rmse_log10": 6.152166826829523,
+          "critical_recall": 0.9943502824858758,
+          "critical_precision": 0.9832402234636871,
+          "critical_true": 354,
+          "critical_tp": 352,
+          "critical_fn": 2,
+          "critical_fp": 6,
+          "risk_only_critical_recall": 0.8064516129032258,
+          "risk_only_critical_true": 31,
+          "risk_only_critical_fn": 6,
+          "pc_driven_critical_recall": 0.8666666666666667,
+          "pc_driven_critical_precision": 0.6842105263157895,
+          "pc_driven_critical_true": 15,
+          "pc_driven_critical_tp": 13,
+          "pc_driven_critical_fn": 2,
+          "pc_driven_critical_fp": 6,
+          "pc_driven_eligible_rows": 4089,
+          "pc_driven_critical_events": 7,
+          "mae_log10_risk_ge_minus6": 1.2743393023417018,
+          "n_risk_ge_minus6": 364,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                352,
+                2,
+                0,
+                0
+              ],
+              [
+                6,
+                895,
+                66,
+                0
+              ],
+              [
+                0,
+                28,
+                3079,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "distance_only": {
+          "n_rows": 4428,
+          "n_events": 1749,
+          "critical_recall": 0.9576271186440678,
+          "critical_precision": 1.0,
+          "critical_true": 354,
+          "critical_tp": 339,
+          "critical_fn": 15,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.0,
+          "risk_only_critical_true": 31,
+          "risk_only_critical_fn": 31,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 15,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 15,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 4089,
+          "pc_driven_critical_events": 7,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                339,
+                15,
+                0,
+                0
+              ],
+              [
+                0,
+                833,
+                134,
+                0
+              ],
+              [
+                0,
+                0,
+                3107,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          },
+          "description": "Distance-only tiers; does not predict Pc."
+        }
+      },
+      {
+        "bucket": "5\u20136 days",
+        "start_days": 5,
+        "end_days": 6,
+        "model": {
+          "n_rows": 4403,
+          "n_events": 1740,
+          "mae_log10": 3.7521406655739624,
+          "rmse_log10": 5.375304934288326,
+          "critical_recall": 0.9970845481049563,
+          "critical_precision": 0.9771428571428571,
+          "critical_true": 343,
+          "critical_tp": 342,
+          "critical_fn": 1,
+          "critical_fp": 8,
+          "risk_only_critical_recall": 0.8461538461538461,
+          "risk_only_critical_true": 26,
+          "risk_only_critical_fn": 4,
+          "pc_driven_critical_recall": 0.9166666666666666,
+          "pc_driven_critical_precision": 0.5789473684210527,
+          "pc_driven_critical_true": 12,
+          "pc_driven_critical_tp": 11,
+          "pc_driven_critical_fn": 1,
+          "pc_driven_critical_fp": 8,
+          "pc_driven_eligible_rows": 4072,
+          "pc_driven_critical_events": 7,
+          "mae_log10_risk_ge_minus6": 1.1169488991737815,
+          "n_risk_ge_minus6": 426,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                342,
+                1,
+                0,
+                0
+              ],
+              [
+                7,
+                890,
+                79,
+                0
+              ],
+              [
+                1,
+                41,
+                3042,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "distance_only": {
+          "n_rows": 4403,
+          "n_events": 1740,
+          "critical_recall": 0.9650145772594753,
+          "critical_precision": 1.0,
+          "critical_true": 343,
+          "critical_tp": 331,
+          "critical_fn": 12,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.0,
+          "risk_only_critical_true": 26,
+          "risk_only_critical_fn": 26,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 12,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 12,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 4072,
+          "pc_driven_critical_events": 7,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                331,
+                12,
+                0,
+                0
+              ],
+              [
+                0,
+                794,
+                182,
+                0
+              ],
+              [
+                0,
+                0,
+                3084,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          },
+          "description": "Distance-only tiers; does not predict Pc."
+        }
+      },
+      {
+        "bucket": "6\u20137 days",
+        "start_days": 6,
+        "end_days": 7,
+        "model": {
+          "n_rows": 4084,
+          "n_events": 1679,
+          "mae_log10": 2.8562894441664333,
+          "rmse_log10": 4.196678820721535,
+          "critical_recall": 1.0,
+          "critical_precision": 0.9566563467492261,
+          "critical_true": 309,
+          "critical_tp": 309,
+          "critical_fn": 0,
+          "critical_fp": 14,
+          "risk_only_critical_recall": 0.8787878787878788,
+          "risk_only_critical_true": 33,
+          "risk_only_critical_fn": 4,
+          "pc_driven_critical_recall": 1.0,
+          "pc_driven_critical_precision": 0.44,
+          "pc_driven_critical_true": 11,
+          "pc_driven_critical_tp": 11,
+          "pc_driven_critical_fn": 0,
+          "pc_driven_critical_fp": 14,
+          "pc_driven_eligible_rows": 3786,
+          "pc_driven_critical_events": 6,
+          "mae_log10_risk_ge_minus6": 0.9604595438211672,
+          "n_risk_ge_minus6": 448,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                309,
+                0,
+                0,
+                0
+              ],
+              [
+                14,
+                867,
+                73,
+                0
+              ],
+              [
+                0,
+                55,
+                2766,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "distance_only": {
+          "n_rows": 4084,
+          "n_events": 1679,
+          "critical_recall": 0.9644012944983819,
+          "critical_precision": 1.0,
+          "critical_true": 309,
+          "critical_tp": 298,
+          "critical_fn": 11,
+          "critical_fp": 0,
+          "risk_only_critical_recall": 0.0,
+          "risk_only_critical_true": 33,
+          "risk_only_critical_fn": 33,
+          "pc_driven_critical_recall": 0.0,
+          "pc_driven_critical_precision": null,
+          "pc_driven_critical_true": 11,
+          "pc_driven_critical_tp": 0,
+          "pc_driven_critical_fn": 11,
+          "pc_driven_critical_fp": 0,
+          "pc_driven_eligible_rows": 3786,
+          "pc_driven_critical_events": 6,
+          "confusion_matrix": {
+            "labels": [
+              "Critical",
+              "Elevated",
+              "Safe",
+              "Incomplete"
+            ],
+            "values": [
+              [
+                298,
+                11,
+                0,
+                0
+              ],
+              [
+                0,
+                743,
+                211,
+                0
+              ],
+              [
+                0,
+                0,
+                2821,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          },
+          "description": "Distance-only tiers; does not predict Pc."
+        }
+      }
+    ]
+  },
+  "notes": [
+    "Test risk was excluded from input and model selection.",
+    "Risk is a surrogate for the same message, not a prediction of final event risk.",
+    "Latest-event metrics use the closest nonnegative time-to-TCA snapshot in the held-out event.",
+    "Selected model refitted on training and validation groups before holdout evaluation.",
+    "The holdout has been inspected during prior development and is not a fresh blind evaluation.",
+    "Time-to-TCA buckets are historical relative message times, not a simultaneous live forecast.",
+    "Pc-driven critical is risk >= -4 with miss distance >= 1000 m; in that subset the distance rule does not independently force Critical."
+  ]
+}
