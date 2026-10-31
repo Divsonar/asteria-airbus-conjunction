@@ -133,6 +133,14 @@ def num(value, fmt: str = ",.2f", fallback: str = "—") -> str:
         return fallback
 
 
+def event_sort_key(event_id):
+    """Order integer event IDs numerically while preserving uploaded text IDs."""
+    label = str(event_id)
+    if re.fullmatch(r"[+-]?\d+", label.strip()):
+        return (0, int(label), label)
+    return (1, label.casefold(), label)
+
+
 def latest_by_event(df: pd.DataFrame) -> pd.DataFrame:
     """Latest eligible early message per event, never across data sources."""
     eligible = df[pd.to_numeric(df["time_to_tca"], errors="coerce") >= 2].copy()
@@ -389,7 +397,7 @@ if page == "Mission control":
         st.markdown('<div class="smallprint">Both files contain every message in the selected dataset, independent of queue filters.</div>', unsafe_allow_html=True)
     with inspector:
         section("02 / Inspect", "Encounter geometry", "Relative position at predicted closest approach — not an orbit or trajectory.")
-        event_options = filtered["event_id"].tolist()
+        event_options = sorted(filtered["event_id"].tolist(), key=event_sort_key)
         event_id = st.selectbox("Event to inspect", event_options, key="tour_event_select", format_func=lambda x: f"Event {x}", label_visibility="collapsed")
         group = df[(df["event_id"] == event_id) & (df["time_to_tca"] >= 2)].sort_values(["time_to_tca", "input_row_position"], ascending=[False, False], kind="stable")
         if group.empty:
