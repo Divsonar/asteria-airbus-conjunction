@@ -1,3 +1,5 @@
 artifacts/*.csv -text
 artifacts/metrics.json -text
 artifacts/*.joblib binary
+artifacts/split_events.json -text
+src/pipeline.py -text

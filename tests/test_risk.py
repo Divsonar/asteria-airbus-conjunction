@@ -2,10 +2,18 @@
 import math
 import unittest
 
-from src.risk import classify, classify_with_rule_ids
+from src.risk import classify, classify_with_rule_ids, collision_probability
 
 
 class AirbusTierTests(unittest.TestCase):
+    def test_recorded_pc_sentinel_is_zero_and_not_a_class_probability(self):
+        values = collision_probability([-30, -4, -6, 1, math.nan])
+        self.assertEqual(values[0], 0)
+        self.assertAlmostEqual(values[1], 1e-4)
+        self.assertAlmostEqual(values[2], 1e-6)
+        self.assertTrue(math.isnan(values[3]))
+        self.assertTrue(math.isnan(values[4]))
+
     def tier(self, risk, distance):
         return classify([risk], [distance])[0][0]
 

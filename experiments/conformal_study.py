@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.pipeline import ARTIFACTS, DATA_DIR, clean_features, latest_message, load_messages, make_model, risk_sample_weights
+from experiments.legacy_pipeline import ARTIFACTS, DATA_DIR, clean_features, latest_message, load_messages, make_model, risk_sample_weights
 
 
 def conformal_quantile(scores, coverage: float = .8) -> float:

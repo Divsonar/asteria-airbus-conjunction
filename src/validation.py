@@ -120,6 +120,7 @@ def validate_telemetry(frame: pd.DataFrame) -> ValidationResult:
     invalid_domain |= (numeric["max_risk_estimate"] > 0).fillna(False).to_numpy(dtype=bool)
 
     after_tca = (numeric["time_to_tca"] < 0).fillna(False).to_numpy(dtype=bool)
+    outside_forecast = (numeric["time_to_tca"] < 2).fillna(False).to_numpy(dtype=bool)
     long_tca = (numeric["time_to_tca"] > LONG_TCA_REVIEW_DAYS).fillna(False).to_numpy(dtype=bool)
     large_sigma = ((numeric["t_sigma_r"] >= LARGE_SIGMA_REVIEW_METRES) |
                    (numeric["c_sigma_r"] >= LARGE_SIGMA_REVIEW_METRES)).fillna(False).to_numpy(dtype=bool)
@@ -174,6 +175,7 @@ def validate_telemetry(frame: pd.DataFrame) -> ValidationResult:
         ("R-NUMERIC", invalid_numeric, "A numeric field contains non-numeric or non-finite data."),
         ("R-RANGE", invalid_domain, "A measurement is outside its expected numerical range."),
         ("R-AFTER-TCA", after_tca, "The message is recorded after its closest-approach time."),
+        ("R-FORECAST-WINDOW", outside_forecast, "The message is less than 2 days before closest approach and is excluded from final-tier inference."),
         ("R-TCA", long_tca, "Time to closest approach exceeds the 365-day display range; inspect the units and input. This is a demo screening heuristic."),
         ("R-RTN", mismatch, "RTN vector magnitude differs from the miss distance by over 1% and 1 metre."),
         ("R-OBJECT", unknown_object, "Object type does not match the model's known dataset categories exactly."),

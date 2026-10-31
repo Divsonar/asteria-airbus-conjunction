@@ -129,15 +129,15 @@ def create_event_assessment_pdf(
             ("Zero-based input position", row.get("input_row_position")),
             ("Report generated", generated),
             ("Message timestamp", "Not available in the permitted fields"),
-            ("Model", model_info.get("name", "Saved risk surrogate")),
+            ("Model", model_info.get("name", "Final-tier forecast classifier")),
             ("Artifact provenance", model_info.get("provenance_status", "Not verified")),
             ("Model version / SHA-256", model_info.get("artifact_sha256", model_info.get("sha256", model_info.get("version", "Not recorded")))),
         ]),
         p("Assessment and evidence", "AsteriaSection"),
         grid([
-            ("Challenge tier", row.get("risk_tier")),
-            ("Estimated Pc", _number(row.get("estimated_pc"), scientific=True)),
-            ("Estimated log10(Pc)", _number(row.get("predicted_log10_pc"), places=3)),
+            ("Forecast final tier", row.get("predicted_final_tier", row.get("risk_tier"))),
+            ("P(final Critical / Elevated / Safe)", " / ".join(_number(row.get(f"prob_{tier}"), places=3) for tier in ("critical", "elevated", "safe"))),
+            ("Forecast status", row.get("forecast_status")),
             ("Miss distance", _with_unit(miss, "m", places=1)),
             ("Time to closest approach", _with_unit(days, "days from this message", places=3)),
             ("Object type", row.get("c_object_type")),
@@ -145,21 +145,22 @@ def create_event_assessment_pdf(
             ("Relative position R / T / N", " / ".join(_number(row.get(f"relative_position_{axis}"), places=1) for axis in ("r", "t", "n")) + " m"),
             ("Radial sigma target / chaser", f"{_number(row.get('t_sigma_r'), places=1)} / {_number(row.get('c_sigma_r'), places=1)} m"),
             ("Max-risk input", _number(row.get("max_risk_estimate"), places=3)),
-            ("Rule IDs", rule_value),
-            ("Rule explanation", row.get("triggered_rules")),
+            ("Forecast method", row.get("triggered_rules")),
             ("Review / data quality", review),
             ("Model input quality", row.get("data_quality")),
         ]),
         p("Challenge rule reference", "AsteriaSection"),
-        p("Autonomous SG 2026 Airbus Track brief, page 1, risk classification. "
-          "Critical: estimated Pc >= 1e-4 or miss distance < 1 km. Otherwise elevated: "
-          "estimated Pc >= 1e-6 or miss distance <= 5 km. Safe requires both "
-          "estimated Pc < 1e-6 and miss distance > 5 km. Incomplete data may require review.", "AsteriaBody"),
+        p("Updated Airbus problem statement, 31 October 2026, pages 1-2; official event-label workbook. "
+          "Final labels: Critical if final Pc >= 1e-4 or final miss distance < 1,000 m; otherwise Elevated "
+          "if final Pc >= 1e-6 or final miss distance <= 5,000 m; otherwise Safe. "
+          "These rules define training labels, not a rule applied to this early message's distance. "
+          "The risk=-30 placeholder means Pc approximately zero.", "AsteriaBody"),
         p("Interpretation and limitations", "AsteriaSection"),
-        p("The estimated Pc is a model surrogate for the risk reported in the same historical message, "
-          "not a physics-derived probability or a prediction of the final encounter risk. The dataset is "
-          "a selected research sample; the model has missed critical-risk messages. Recorded miss distance "
-          "is a predicted closest-approach distance, not a measurement of a completed encounter. "
+        p("The classifier uses only telemetry at least 2 days before closest approach to forecast the "
+          "organizer's final recorded tier. Class probabilities are uncalibrated model scores, not collision "
+          "probability Pc. Evaluation uses one latest eligible message per held-out event; earlier replay "
+          "messages are illustrative. Final recorded labels are not confirmed collision outcomes. "
+          "Recorded miss distance is an early closest-approach estimate, not the final distance. "
           "A qualified analyst must evaluate the evidence and make all operational decisions. "
           "This document does not authorize or record a maneuver.", "AsteriaBody"),
     ]

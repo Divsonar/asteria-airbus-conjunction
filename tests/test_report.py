@@ -8,15 +8,16 @@ from src.report import create_event_assessment_pdf
 
 def test_report_contains_selected_evidence_and_limits():
     row = {"event_id": 123, "source_row_id": 99, "input_row_position": 23, "risk_tier": "Critical",
-           "estimated_pc": 0.00012, "predicted_log10_pc": -3.92,
+           "prob_critical": .75, "prob_elevated": .20, "prob_safe": .05,
+           "forecast_status": "Eligible early forecast",
            "miss_distance": 742, "time_to_tca": 2.1, "c_object_type": "DEBRIS",
-           "triggered_rules": "miss distance < 1 km", "rule_ids": "C2",
+           "triggered_rules": "Highest final-tier probability", "rule_ids": "F1",
            "review_required": True, "review_codes": "R-SIGMA",
            "review_reasons": "Unusually large radial sigma"}
     output = create_event_assessment_pdf(row, "Test set", {"name": "Example surrogate", "sha256": "abc123"})
     assert output.startswith(b"%PDF-")
     text = "\n".join(page.extract_text() for page in PdfReader(BytesIO(output)).pages)
-    for part in ("123 / 99", "Zero-based input position", "23", "742.0 m", "2.100 days", "1.20e-04", "C2", "abc123",
+    for part in ("123 / 99", "Zero-based input position", "23", "742.0 m", "2.100 days", "0.750 / 0.200 / 0.050", "Highest final-tier probability", "abc123",
                  "Required - R-SIGMA", "Unusually large radial sigma", "Not available in the permitted fields", "does not authorize"):
         assert part in text
 

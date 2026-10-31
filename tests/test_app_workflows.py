@@ -34,7 +34,7 @@ class DashboardWorkflowTests(unittest.TestCase):
 
     def event_messages(self, event_id):
         rows = self.test_rows.reset_index(names="position")
-        return rows[(rows.event_id == event_id) & (rows.time_to_tca >= 0)].sort_values(
+        return rows[(rows.event_id == event_id) & (rows.time_to_tca >= 2)].sort_values(
             ["time_to_tca", "position"], ascending=[False, False], kind="stable")
 
     def assert_selected_row(self, row):
@@ -74,7 +74,7 @@ class DashboardWorkflowTests(unittest.TestCase):
         next(x for x in self.app.selectbox if x.label == "Object type").set_value("DEBRIS").run()
         self.assertFalse(self.app.exception, [e.message for e in self.app.exception])
         data = self.test_rows.reset_index(names="position")
-        latest = data[data.time_to_tca >= 0].sort_values(["event_id", "time_to_tca", "position"], kind="stable").drop_duplicates("event_id")
+        latest = data[data.time_to_tca >= 2].sort_values(["event_id", "time_to_tca", "position"], kind="stable").drop_duplicates("event_id")
         expected = latest[(latest.risk_tier == "Critical") & (latest.c_object_type == "DEBRIS") & latest.time_to_tca.between(0, 7)]
         queue = self.app.dataframe[0].value
         buckets = self.app.dataframe[1].value
@@ -99,9 +99,9 @@ class DashboardWorkflowTests(unittest.TestCase):
         self.assertTrue(any("Model: Not verified" in x.value for x in app.caption))
         self.assertFalse(any("a" * 64 in x.value for x in app.caption))
 
-    def test_negative_distance_is_not_counted_as_a_close_approach(self):
-        # Synthetic in-memory data exercises the rendered KPI; no artifacts are
-        # modified. The first row is invalid and the second is a real <1 km case.
+    def test_late_rows_are_not_shown_as_early_forecasts(self):
+        # Synthetic late messages must remain out of the forecast queue.
+        # Their preserved export is available even when no early rows exist.
         import streamlit as st
         synthetic = self.test_rows.head(2).copy()
         synthetic["event_id"] = [909990, 909991]
@@ -119,11 +119,9 @@ class DashboardWorkflowTests(unittest.TestCase):
             with patch("pandas.read_csv", side_effect=read_csv):
                 app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
             self.assertFalse(app.exception, [e.message for e in app.exception])
-            card = next(x.value for x in app.markdown if "24h · under 1 km" in x.value)
-            self.assertIn('<div class="metric-value">1</div>', card)
-            buckets = app.dataframe[1].value
-            self.assertEqual(int(buckets["Events"].sum()), 2)
-            self.assertEqual(int(buckets["Under 1 km"].sum()), 1)
+            self.assertTrue(any("No eligible messages" in x.value for x in app.warning))
+            self.assertEqual(len(app.dataframe), 0)
+            self.assertTrue(any("exact predictions" in x.proto.label for x in app.get("download_button")))
         finally:
             st.cache_data.clear()
 

@@ -17,7 +17,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from src.pipeline import ARTIFACTS, DATA_DIR, clean_features, latest_message, load_messages, make_model, metrics
+from experiments.legacy_pipeline import ARTIFACTS, DATA_DIR, clean_features, latest_message, load_messages, make_model, metrics
 from src.provenance import verify_manifest
 
 

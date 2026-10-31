@@ -8,6 +8,20 @@ import numpy as np
 import pandas as pd
 
 
+def collision_probability(log_risk):
+    """Convert recorded log10(Pc), honoring the organizer's -30 sentinel.
+
+    Returns zero for -30 (effectively uncomputably small), and NaN for invalid
+    values. This function is for recorded telemetry, never classifier scores.
+    """
+    risk = pd.to_numeric(pd.Series(log_risk), errors="coerce").to_numpy(dtype=float)
+    valid = np.isfinite(risk) & (risk <= 0)
+    result = np.full(len(risk), np.nan)
+    result[valid] = np.power(10.0, risk[valid])
+    result[valid & (risk == -30)] = 0.0
+    return result
+
+
 def classify(log_risk, miss_distance):
     """Return tier, rule and data-quality arrays for log10(Pc) and metres.
 

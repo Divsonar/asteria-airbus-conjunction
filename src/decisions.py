@@ -24,9 +24,9 @@ OVERRIDE_TIERS = ("Critical", "Elevated", "Safe", "Incomplete")
 NUMERIC_EVIDENCE = (
     "input_row_position", "time_to_tca_days", "miss_distance_m", "relative_speed", "relative_position_r", "relative_position_t",
     "relative_position_n", "c_sigma_r", "t_sigma_r", "max_risk_estimate", "F10", "AP",
-    "predicted_log10_pc", "estimated_pc",
+    "prob_critical", "prob_elevated", "prob_safe", "prediction_confidence",
 )
-TEXT_EVIDENCE = ("c_object_type", "risk_tier", "rule_ids", "triggered_rules", "data_quality", "review_reasons")
+TEXT_EVIDENCE = ("c_object_type", "risk_tier", "predicted_final_tier", "forecast_status", "rule_ids", "triggered_rules", "data_quality", "review_reasons")
 EXPORT_FIELDS = ("record_id", "recorded_at_utc", "dataset_id", "event_id", "source_row_id",
                  "action", "override_tier", "reason", "analyst", "model_sha256",
                  "evidence_sha256", "evidence_json")

@@ -40,7 +40,7 @@ class UploadIntegrationTests(unittest.TestCase):
         self.assertEqual(len(result), 3)
         self.assertNotIn("risk", result.columns)
         self.assertEqual(result.source_row_id.tolist(), ["0001", "@formula", "n-003"])
-        np.testing.assert_allclose(result.predicted_log10_pc, again.predicted_log10_pc)
+        np.testing.assert_allclose(result[["prob_critical", "prob_elevated", "prob_safe"]], again[["prob_critical", "prob_elevated", "prob_safe"]])
 
         # The safe spreadsheet export neutralizes user-controlled formulas;
         # the exact export retains the original IDs for machine scoring.

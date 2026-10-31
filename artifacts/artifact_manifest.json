@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "recorded_utc": "2026-10-31T03:22:56.432875+00:00",
+  "recorded_utc": "2026-10-31T05:12:57.139543+00:00",
   "files_sha256": {
-    "risk_model.joblib": "714907c6b95a69cb19da79e2df97a61f6ba22f2488e9fa063778b514636bdde1",
-    "metrics.json": "26ac729c2b6426fc3c1ba829efa1ceceb04b7cb79c60f8cceaa6965d356bd60f",
-    "test_predictions.csv": "621318db61c512666584f94929e03cf7cd81c2238fcf13fd0eb22a16b295b011",
-    "holdout_predictions.csv": "f44da14bb115cd8456a3cefb8fb914ad405409909af35e15173339c86732d250"
+    "risk_model.joblib": "42ba83d5a5091d46c3b868b5f5d5c8d4c783cc8a88e06b4ab0f6a1cf91ab4262",
+    "metrics.json": "7b0b93b93b446d897bf2ae0f914fd68fe294b8aa6a6052a94d2deef05507ed46",
+    "test_predictions.csv": "d5fea30c623584d796e59d95f20657a55afaa4b19781c51db0cb16c762ea01ee",
+    "holdout_predictions.csv": "6d4c1782813c1fb5f746abebe250d35792b761221dccddc8e3a644920c592b2d"
   },
   "scope": "Checksums identify file contents; they do not independently prove model or data lineage."
 }

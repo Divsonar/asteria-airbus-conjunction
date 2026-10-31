@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from src.pipeline import (bucket_metrics, choose_weighted_candidate, distance_only_metrics,
+from experiments.legacy_pipeline import (bucket_metrics, choose_weighted_candidate, distance_only_metrics,
                           latest_message, metrics, pc_driven_recall_interval)
 
 

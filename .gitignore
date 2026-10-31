@@ -8,3 +8,7 @@ artifacts/analyst_decisions.sqlite*
 *.env
 Challenge 1 Airbus_/
 *.zip
+tmp/
+Updated/
+outputs/
+experiments/legacy_artifacts/

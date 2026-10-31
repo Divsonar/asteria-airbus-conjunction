@@ -15,12 +15,12 @@ import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.risk import classify_with_rule_ids
 from src.provenance import verify_manifest
 from src.validation import read_telemetry_csv, spreadsheet_safe_csv, validate_telemetry
 
 
 ROOT = Path(__file__).resolve().parent
+APP_VERSION = "2026-10-31-final-tier"
 ARTIFACTS = ROOT / "artifacts"
 COLORS = {"Critical": "#ff6f73", "Elevated": "#f7bd68", "Safe": "#69e5c7", "Incomplete": "#9baabc"}
 TEXT = "#deedf0"
@@ -134,9 +134,9 @@ def num(value, fmt: str = ",.2f", fallback: str = "—") -> str:
 
 
 def latest_by_event(df: pd.DataFrame) -> pd.DataFrame:
-    """Latest usable historical message per event, never across data sources."""
-    nonnegative = df[pd.to_numeric(df["time_to_tca"], errors="coerce") >= 0].copy()
-    return nonnegative.sort_values(["event_id", "time_to_tca", "input_row_position"], kind="stable").drop_duplicates("event_id", keep="first")
+    """Latest eligible early message per event, never across data sources."""
+    eligible = df[pd.to_numeric(df["time_to_tca"], errors="coerce") >= 2].copy()
+    return eligible.sort_values(["event_id", "time_to_tca", "input_row_position"], kind="stable").drop_duplicates("event_id", keep="first")
 
 
 def chart_layout(fig: go.Figure, height: int = 340) -> go.Figure:
@@ -167,15 +167,13 @@ def geometry_plot(row: pd.Series) -> go.Figure | None:
 def history_plot(group: pd.DataFrame, selected_row: pd.Series | None = None) -> go.Figure:
     h = group.sort_values("time_to_tca", ascending=False)
     fig = go.Figure()
-    fig.add_hrect(y0=-4, y1=0, fillcolor="rgba(255,111,115,.08)", line_width=0)
-    fig.add_hline(y=-4, line_dash="dot", line_color="rgba(255,111,115,.7)", annotation_text="Critical · −4", annotation_font_color="#ff9a9c")
-    fig.add_hline(y=-6, line_dash="dot", line_color="rgba(247,189,104,.65)", annotation_text="Elevated · −6", annotation_font_color="#edc583")
-    fig.add_trace(go.Scatter(x=h["time_to_tca"], y=h["predicted_log10_pc"], mode="lines+markers", name="Estimated log₁₀(Pc)", line=dict(color="#6de5cf",width=2.5), marker=dict(size=7,color="#6de5cf"), hovertemplate="%{x:.2f} days to TCA<br>Estimated log₁₀(Pc): %{y:.2f}<extra></extra>"))
+    for tier in ["Critical", "Elevated", "Safe"]:
+        fig.add_trace(go.Scatter(x=h["time_to_tca"], y=h[f"prob_{tier.lower()}"], mode="lines+markers", name=f"P(final {tier})", line=dict(color=COLORS[tier],width=2), marker=dict(size=5), hovertemplate="%{x:.2f} days to TCA<br>P(final " + tier + "): %{y:.1%}<extra></extra>"))
     fig.add_trace(go.Scatter(x=h["time_to_tca"], y=pd.to_numeric(h["miss_distance"], errors="coerce") / 1000, mode="lines+markers", name="Recorded miss · km", yaxis="y2", line=dict(color="#85a8ef",width=1.5,dash="dot"), marker=dict(size=5,color="#85a8ef"), hovertemplate="%{x:.2f} days to TCA<br>Miss distance: %{y:.2f} km<extra></extra>"))
     if selected_row is not None and pd.notna(selected_row.get("time_to_tca")):
         fig.add_vline(x=float(selected_row["time_to_tca"]), line_dash="dash", line_color="rgba(238,255,252,.65)", annotation_text="Selected message", annotation_font_color="#c5eee5")
     fig.update_xaxes(title="Days to closest approach · earlier → later", autorange="reversed", gridcolor=GRID, zeroline=False)
-    fig.update_yaxes(title="Estimated log₁₀(Pc)", gridcolor=GRID, zeroline=False)
+    fig.update_yaxes(title="Final-tier model probability", range=[0, 1.05], tickformat=".0%", gridcolor=GRID, zeroline=False)
     fig.update_layout(yaxis2=dict(title="Recorded miss · km", overlaying="y", side="right", showgrid=False, rangemode="tozero", color="#85a8ef"))
     return chart_layout(fig, 290)
 
@@ -207,13 +205,13 @@ def sensitivity_warning() -> None:
         st.markdown('<div class="warning-note"><b>Research demonstration only.</b> Evaluation is unavailable. Do not rely on these estimates for operational decisions.</div>', unsafe_allow_html=True)
         return
     report = load_metrics(str(metrics_path), metrics_path.stat().st_mtime_ns, metrics_path.stat().st_size)
-    rows = report.get("holdout", {}).get("rows", {})
-    recall = rows.get("risk_only_critical_recall")
-    misses, total = rows.get("risk_only_critical_fn"), rows.get("risk_only_critical_true")
+    rows = report.get("holdout", {}).get("latest_event", {})
+    recall = rows.get("critical_recall")
+    misses, total = rows.get("critical_fn", rows.get("fn")), rows.get("critical_true")
     if recall is None or misses is None or total is None:
-        st.markdown('<div class="warning-note"><b>Research demonstration only.</b> Risk-only sensitivity has not been established. Do not rely on these estimates for operational decisions.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="warning-note"><b>Research demonstration only.</b> Final-tier sensitivity has not been established. Qualified operators retain all maneuver decisions.</div>', unsafe_allow_html=True)
         return
-    st.markdown(f'<div class="warning-note"><b>Research demonstration only · limited sensitivity.</b> On held-out historical messages, the model identified {recall:.1%} of risk-only critical cases and missed {misses} of {total}. The combined-tier score benefits from the separate distance rule. <b>Do not rely on this model for operational decisions.</b></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="warning-note"><b>Early warning · measured limits.</b> Using messages at least 2 days before closest approach, the model identified {recall:.1%} of final Critical events and missed {misses} of {total} on the held-out event split. Probabilities describe final tiers, not collision probability, and are not operationally calibrated. <b>Qualified operators retain all maneuver decisions.</b></div>', unsafe_allow_html=True)
 
 if not test_path.exists():
     st.markdown('<div class="eyebrow">Asteria / Initialization</div>', unsafe_allow_html=True)
@@ -237,10 +235,10 @@ if page == "Mission control":
     with top_left:
         st.markdown('<div class="eyebrow">Asteria / Conjunction intelligence</div>', unsafe_allow_html=True)
         st.title("See the close calls, sooner.")
-        st.markdown('<p class="lede">A clear view of conjunction messages, model-estimated collision risk and the rules behind every alert.</p>', unsafe_allow_html=True)
+        st.markdown('<p class="lede">Forecast the final risk tier at least two days ahead. Explore the telemetry, uncertainty and evidence behind each alert.</p>', unsafe_allow_html=True)
     with top_right:
         st.markdown('<div style="text-align:right;padding-top:18px"><span class="status"><span class="dot"></span> Historical data</span></div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero"><div class="hero-label">Conjunction assessment / decision support</div><div class="hero-title">A clearer picture of what needs attention.</div><div class="hero-copy">Explore relative encounter geometry, compare message updates and trace each classification to its threshold. Estimates support review; they do not authorize maneuvers.</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero"><div class="hero-label">Early conjunction assessment / 2+ days ahead</div><div class="hero-title">A clearer picture of what needs attention.</div><div class="hero-copy">Replay early message updates, rotate the encounter geometry and see how the forecast changes. Three probabilities express the model’s view of the final tier. Every maneuver decision stays with the operator.</div></div>', unsafe_allow_html=True)
     sensitivity_warning()
 
     with st.sidebar:
@@ -291,7 +289,7 @@ if page == "Mission control":
                 df = predict_messages(raw)
             else:
                 df = load_csv(str(path), path.stat().st_mtime_ns, path.stat().st_size)
-            required = {"source_row_id", "event_id", "time_to_tca", "miss_distance", "risk_tier", "predicted_log10_pc", "estimated_pc", "relative_position_r", "relative_position_t", "relative_position_n"}
+            required = {"source_row_id", "event_id", "time_to_tca", "miss_distance", "risk_tier", "predicted_final_tier", "prob_critical", "prob_elevated", "prob_safe", "prediction_confidence", "forecast_status", "relative_position_r", "relative_position_t", "relative_position_n"}
             missing = required - set(df.columns)
             if missing:
                 raise ValueError("Prediction file is missing required columns: " + ", ".join(sorted(missing)))
@@ -302,8 +300,7 @@ if page == "Mission control":
             flags = validation_report.flags
             for col in ["review_required", "review_codes", "review_reasons"]:
                 df[col] = flags[col].to_numpy()
-            _, _, _, rule_ids = classify_with_rule_ids(df["predicted_log10_pc"], df["miss_distance"])
-            df["rule_ids"] = rule_ids
+            df["rule_ids"] = "F-2D; F-FINAL-TIER"
             # Physical input position is separate from any user-provided identifier.
             df["input_row_position"] = np.arange(len(df), dtype=np.int64)
             source_columns = ["source_row_id", "event_id", "time_to_tca", "miss_distance", "relative_speed", "relative_position_r", "relative_position_t", "relative_position_n", "c_object_type", "c_sigma_r", "t_sigma_r", "max_risk_estimate", "F10", "AP"]
@@ -311,7 +308,7 @@ if page == "Mission control":
             dataset_id = "sha256:" + hashlib.sha256(source_bytes).hexdigest()
             download_bytes = df.to_csv(index=False).encode("utf-8")
             safe_download_bytes = spreadsheet_safe_csv(df)
-            for col in ["time_to_tca", "miss_distance", "predicted_log10_pc", "estimated_pc", "relative_position_r", "relative_position_t", "relative_position_n"]:
+            for col in ["time_to_tca", "miss_distance", "prob_critical", "prob_elevated", "prob_safe", "prediction_confidence", "relative_position_r", "relative_position_t", "relative_position_n"]:
                 df[col] = pd.to_numeric(df[col], errors="coerce").replace([np.inf, -np.inf], np.nan)
             df["risk_tier"] = df["risk_tier"].astype(str).str.title()
             cached = {"key": cache_key, "df": df, "validation_summary": validation_report.summary,
@@ -332,7 +329,7 @@ if page == "Mission control":
             st.json(validation_summary, expanded=False)
     latest = latest_by_event(df)
     if latest.empty:
-        st.warning("No messages with a nonnegative time to closest approach are available in this dataset.")
+        st.warning("No eligible messages at least 2 days before closest approach are available. Later rows are retained in the export with an abstention; they are not used for forecasting.")
         prediction_downloads(safe_download_bytes, download_bytes, download_name)
         st.stop()
     with st.sidebar:
@@ -361,12 +358,10 @@ if page == "Mission control":
         filtered = filtered[filtered["event_id"].astype(str).str.contains(search.strip(), case=False, regex=False)]
     counts = filtered["risk_tier"].value_counts()
     cards = st.columns(4)
-    with cards[0]: metric("Events in view", f"{len(filtered):,}", "Latest recorded message per event", "#6de5cf")
+    with cards[0]: metric("Events in view", f"{len(filtered):,}", "Latest eligible message · ≥2 days", "#6de5cf")
     with cards[1]: metric("Critical", f"{counts.get('Critical', 0):,}", "Requires priority review", "#ff6f73")
     with cards[2]: metric("Elevated", f"{counts.get('Elevated', 0):,}", "Monitor and investigate", "#f7bd68")
-    danger_distance = pd.to_numeric(filtered["miss_distance"], errors="coerce")
-    danger_24h = filtered["time_to_tca"].between(0, 1) & danger_distance.ge(0) & danger_distance.lt(1000)
-    with cards[3]: metric("24h · under 1 km", f"{int(danger_24h.sum()):,}", "Retrospective snapshots, not live", "#86acf4")
+    with cards[3]: metric("24h · early-data coverage", "No data", "Forecast inputs stop at T−2 days", "#86acf4")
     st.caption(f"{int(filtered['review_required'].sum()):,} selected event messages have data-quality review flags. Flags do not measure model uncertainty.")
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
@@ -378,21 +373,27 @@ if page == "Mission control":
     filtered = filtered.sort_values(["_priority", "time_to_tca", "event_id"], kind="stable")
     overview, inspector = st.columns([1.05, .95], gap="large")
     with overview:
-        section("01 / Prioritise", "Conjunction queue", "One latest available nonnegative-time message per event. Select an event to inspect its evidence.")
-        queue = filtered[["event_id", "risk_tier", "review_required", "time_to_tca", "miss_distance", "estimated_pc"]].copy()
-        queue.columns = ["Event", "Tier", "Review", "TCA · days", "Miss · m", "Estimated Pc"]
+        section("01 / Prioritise", "Conjunction queue", "One latest eligible message per event. Tier is the forecast final outcome; distance is the current recorded estimate.")
+        queue = filtered[["event_id", "risk_tier", "review_required", "time_to_tca", "miss_distance", "prob_critical"]].copy()
+        queue.columns = ["Event", "Final tier", "Review", "TCA · days", "Miss · m", "P(final Critical)"]
         with st.container(key="tour_queue"):
             st.dataframe(queue, hide_index=True, width="stretch", height=355,
-                         column_config={"TCA · days": st.column_config.NumberColumn(format="%.2f"), "Miss · m": st.column_config.NumberColumn(format="%.0f"), "Estimated Pc": st.column_config.NumberColumn(format="%.2e")})
+                         column_config={"TCA · days": st.column_config.NumberColumn(format="%.2f"), "Miss · m": st.column_config.NumberColumn(format="%.0f"), "P(final Critical)": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.3f")})
+        with st.expander("Download one forecast per event"):
+            event_export = latest[["event_id", "predicted_final_tier", "prob_critical", "prob_elevated", "prob_safe", "source_row_id", "time_to_tca"]].copy()
+            st.caption(f"{len(event_export):,} events from the full selected dataset, independent of queue filters. Each uses its latest eligible ≥2-day CDM. Probabilities describe final tiers; time_to_tca is in days.")
+            st.download_button("↓  Event forecasts · spreadsheet-safe CSV", data=spreadsheet_safe_csv(event_export), file_name="spreadsheet_safe_event_forecasts.csv", mime="text/csv", width="stretch")
+            st.download_button("↓  Event forecasts · exact machine CSV", data=event_export.to_csv(index=False).encode("utf-8"), file_name="event_forecasts.csv", mime="text/csv", width="stretch")
+            st.caption("The exact file preserves original IDs for programmatic evaluation. The spreadsheet-safe file neutralizes formula-like text.")
         prediction_downloads(safe_download_bytes, download_bytes, download_name)
         st.markdown('<div class="smallprint">Both files contain every message in the selected dataset, independent of queue filters.</div>', unsafe_allow_html=True)
     with inspector:
         section("02 / Inspect", "Encounter geometry", "Relative position at predicted closest approach — not an orbit or trajectory.")
         event_options = filtered["event_id"].tolist()
         event_id = st.selectbox("Event to inspect", event_options, key="tour_event_select", format_func=lambda x: f"Event {x}", label_visibility="collapsed")
-        group = df[(df["event_id"] == event_id) & (df["time_to_tca"] >= 0)].sort_values(["time_to_tca", "input_row_position"], ascending=[False, False], kind="stable")
+        group = df[(df["event_id"] == event_id) & (df["time_to_tca"] >= 2)].sort_values(["time_to_tca", "input_row_position"], ascending=[False, False], kind="stable")
         if group.empty:
-            st.warning("No nonnegative-time messages are available for this event.")
+            st.warning("No eligible early messages are available for this event.")
             st.stop()
         fingerprint = hashlib.sha256(download_bytes).hexdigest()[:12]
         selection = (source, str(event_id), fingerprint)
@@ -402,10 +403,10 @@ if page == "Mission control":
         elif "tour_replay" not in st.session_state or not 0 <= st.session_state["tour_replay"] < len(group):
             st.session_state["tour_replay"] = len(group) - 1
         if len(group) > 1:
-            step = st.slider("Replay recorded messages", min_value=0, max_value=len(group)-1, key="tour_replay", help="Earlier to later historical messages. The latest snapshot is selected by default.")
+            step = st.slider("Replay recorded messages", min_value=0, max_value=len(group)-1, key="tour_replay", help="Earlier to later eligible messages, all at least 2 days before TCA. Forecasts use the selected message only; later messages are never input features.")
         else:
             step = 0
-            st.caption("This event has one nonnegative-time message.")
+            st.caption("This event has one eligible early message.")
         row = group.iloc[step]
         st.caption(f"Message {step + 1} of {len(group)} · T−{num(row['time_to_tca'])} days · queue shows the latest message. The plot shows each message's estimated position at TCA, not an orbit.")
         fig = geometry_plot(row)
@@ -416,7 +417,7 @@ if page == "Mission control":
         st.markdown('<div class="smallprint">Drag to rotate · R / T / N are radial, along-track and cross-track axes. Rings are 1 km and 5 km guides in the R–T plane.</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    section("03 / Understand", f"Event {event_id}", "Evidence from the selected historical message and the history of the model estimates.")
+    section("03 / Understand", f"Event {event_id}", "Final-tier probabilities from the selected early message. These describe model uncertainty, not the probability of a collision.")
     details, history = st.columns([.8, 1.2], gap="large")
     with details:
         with st.container(border=True):
@@ -431,12 +432,16 @@ if page == "Mission control":
             st.write("")
             a, b = st.columns(2)
             with a:
-                st.markdown(f'<div class="detail-label">Estimated Pc</div><div class="detail-value">{num(row["estimated_pc"], ".2e")}</div><div class="detail-foot">log₁₀(Pc) {num(row["predicted_log10_pc"])}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="detail-label">Final-tier confidence</div><div class="detail-value">{num(row["prediction_confidence"], ".1%")}</div><div class="detail-foot">Uncalibrated model probability</div>', unsafe_allow_html=True)
             with b:
                 st.markdown(f'<div class="detail-label">Miss distance</div><div class="detail-value">{num(float(row["miss_distance"]) / 1000)} km</div><div class="detail-foot">{num(row["time_to_tca"])} days to TCA</div>', unsafe_allow_html=True)
             st.write("")
-            st.markdown(f'<div class="detail-label">Rule triggered</div><div style="color:#d4e6e5;font-size:13px;line-height:1.5">{safe_text(row.get("triggered_rules", "See threshold rules below"))}</div>', unsafe_allow_html=True)
-            st.caption(f"Rule IDs: {row.get('rule_ids', '—')} · Airbus track brief, page 1 · challenge thresholds")
+            for tier in ["Critical", "Elevated", "Safe"]:
+                probability = float(row.get(f"prob_{tier.lower()}", float("nan")))
+                if np.isfinite(probability):
+                    st.progress(min(1.0, max(0.0, probability)), text=f"P(final {tier}) · {probability:.1%}")
+            st.markdown(f'<div class="detail-label">Forecast basis</div><div style="color:#d4e6e5;font-size:13px;line-height:1.5">{safe_text(row.get("triggered_rules", "Latest eligible early telemetry → final-tier classifier"))}</div>', unsafe_allow_html=True)
+            st.caption("F-2D: inputs ≥2 days before TCA · F-FINAL-TIER: organizer event labels · updated Airbus brief, pages 1–2. Classifier probabilities are not Pc.")
             if "data_quality" in row.index:
                 st.markdown(f'<div class="detail-label" style="margin-top:16px">Model input status</div><div class="smallprint">{safe_text(row.get("data_quality"))}</div>', unsafe_allow_html=True)
             with st.expander("Message evidence"):
@@ -451,7 +456,7 @@ if page == "Mission control":
                     "other_object_radial_sigma_m": row.get("c_sigma_r"),
                     "max_risk_estimate_as_provided": row.get("max_risk_estimate"),
                 }, expanded=False)
-                brief_path = ROOT / "Autonomous SG 2026_Airbus Track.pdf"
+                brief_path = ROOT / "docs" / "airbus-challenge-updated.pdf"
                 if brief_path.exists():
                     st.download_button("↓  Airbus track brief · rule source", data=brief_path.read_bytes(), file_name=brief_path.name, mime="application/pdf", width="stretch")
             if (ROOT / "src" / "report.py").exists():
@@ -494,19 +499,29 @@ if page == "Mission control":
                         if not ambiguous_identity:
                             records = list_decisions(decisions_file, dataset_id=dataset_id, event_id=row["event_id"], source_row_id=row["source_row_id"])
                             if records:
-                                st.caption("Saved reviews for this message · newest first")
-                                history_rows = [{"Recorded UTC": item["recorded_at_utc"], "Action": item["action"], "Override": item["override_tier"] or "—", "Analyst": item["analyst"], "Reason": item["reason"]} for item in records[:10]]
+                                st.caption("Saved reviews for this message · newest first. Earlier model assessments are retained with their model version; they are not assessments of the current forecast.")
+                                history_rows = [{"Recorded UTC": item["recorded_at_utc"], "Action": item["action"], "Override": item["override_tier"] or "—", "Model version": str(item.get("model_sha256", "Unknown"))[:12], "Current model": item.get("model_sha256") == bundle.get("model_sha256"), "Analyst": item["analyst"], "Reason": item["reason"]} for item in records[:10]]
                                 st.dataframe(pd.DataFrame(history_rows), hide_index=True, width="stretch")
                         st.download_button("↓  Export this dataset's review records", data=export_decisions_csv(decisions_file, dataset_id=dataset_id), file_name="asteria_review_records.csv", mime="text/csv", width="stretch")
                     except Exception as exc:
                         st.error(f"Could not export the review records: {exc}")
     with history:
         st.plotly_chart(history_plot(group, selected_row=row), key="tour_history", width="stretch", config={"displayModeBar": False})
-        st.markdown('<div class="smallprint">Each point is a historical message. Mint shows estimated risk (left axis); blue shows recorded miss distance (right axis). The dashed vertical line marks the selected message. Neither line forecasts a later message.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="note" style="margin-top:18px"><b>Reading this view:</b> 24-hour counts refer to each message’s own time to closest approach. Messages are historical and do not share a verified observation time, so the count is not a live, simultaneous warning feed. Dataset selection over-represents high-risk events.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="smallprint">Coral, amber and mint show final Critical, Elevated and Safe probabilities (left axis). Blue shows recorded miss distance (right axis). Each forecast uses only its selected early message. The dashed line marks your replay position; inputs stop at T−2 days.</div>', unsafe_allow_html=True)
+        with st.expander("Relative-position components through early messages"):
+            rtn = go.Figure()
+            ordered = group.sort_values("time_to_tca", ascending=False)
+            for component, label, color in [("r", "Radial", "#6de5cf"), ("t", "Along-track", "#85a8ef"), ("n", "Cross-track", "#f7bd68")]:
+                rtn.add_trace(go.Scatter(x=ordered["time_to_tca"], y=pd.to_numeric(ordered[f"relative_position_{component}"], errors="coerce") / 1000, mode="lines+markers", name=label, line=dict(color=color), hovertemplate="%{x:.2f} days to TCA<br>" + label + ": %{y:.3f} km<extra></extra>"))
+            rtn.add_vline(x=float(row["time_to_tca"]), line_dash="dash", line_color="#bddbd6")
+            rtn.update_xaxes(title="Days to closest approach", autorange="reversed", gridcolor=GRID)
+            rtn.update_yaxes(title="Recorded relative position · km", gridcolor=GRID)
+            st.plotly_chart(chart_layout(rtn, 270), key="rtn_time_history", width="stretch", config={"displayModeBar": False})
+            st.caption("Each point is a CDM estimate of relative position at closest approach, indexed by the message’s days to TCA. It is not an object’s path through space.")
+    st.markdown('<div class="note" style="margin-top:18px"><b>Why the 24-hour view has no data:</b> the official forecast task allows only messages at least 2 days before closest approach. An empty 0–1 day window means unavailable coverage, not zero danger. Historical messages have no common observation clock and are not a live warning feed.</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    bucket_caption = "One latest available message per filtered event, grouped in 24-hour-wide intervals. These messages were not observed at a common time."
+    bucket_caption = "One latest eligible early message per filtered event, grouped in 24-hour-wide intervals and colored by forecast final tier. These messages were not observed at a common time."
     if (filtered["time_to_tca"] >= 365).any():
         bucket_caption += " Unusually long values are grouped into a 365+ days bucket."
     section("04 / Look ahead", "Historical time-to-approach buckets", bucket_caption)
@@ -532,152 +547,117 @@ if page == "Mission control":
 elif page == "Model evidence":
     st.markdown('<div class="eyebrow">Asteria / Validation</div>', unsafe_allow_html=True)
     st.title("Evidence before confidence.")
-    st.markdown('<p class="lede">An honest view of what was measured, where the model misses, and what the numbers do not prove.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="lede">A final-tier forecast tested on unseen events, with its baseline, missed cases and limitations in view.</p>', unsafe_allow_html=True)
     sensitivity_warning()
     if bundle["status"] != "verified":
-        st.warning("The evaluation bundle is not verified and may not correspond to the currently displayed prediction model.")
+        st.warning("The evaluation bundle is not verified and may not correspond to the displayed model.")
     if not metrics_path.exists():
         st.info("Evaluation metrics have not been generated. Run `python train.py` and reload the page.")
         st.stop()
     metrics = load_metrics(str(metrics_path), metrics_path.stat().st_mtime_ns, metrics_path.stat().st_size)
-    st.markdown('<div class="note"><b>What is being predicted:</b> log₁₀(Pc) reported in the same message, using permitted telemetry. It is a learned surrogate, not a physics-derived collision probability or a forecast of final risk. Validation separates entire events; the test-file risk column is not used.</div>', unsafe_allow_html=True)
-    st.caption("The training-file holdout has been inspected during development; these results are exploratory rather than a newly blinded final evaluation.")
+    st.markdown('<div class="note"><b>The official task:</b> predict the organizer’s final event tier using only telemetry at least 2 days before closest approach. Headline scores use one latest eligible message per held-out event. Final label fields are targets only; test-file outcomes are unavailable and never used.</div>', unsafe_allow_html=True)
+    st.caption("Events are separated into training, validation and holdout groups. Candidate selection uses validation only. Repeated inspection during development makes this an exploratory evaluation, not a prospective operational trial.")
     st.write("")
-    section("01 / Measured performance", "Held-out event evaluation", "Metrics and denominators below come from the saved training run. Lower MAE and RMSE are better; critical recall exposes missed high-risk cases.")
     holdout = metrics.get("holdout", {})
-    if holdout.get("rows"):
-        result = holdout["rows"]
-        baseline = holdout.get("baseline_rows", {})
-        latest = holdout.get("latest_event", {})
-        def percent(value):
-            return f"{100 * value:.1f}%" if value is not None else "—"
+    result = holdout.get("latest_event", {})
+    def percent(value):
+        return f"{100 * value:.1f}%" if value is not None else "—"
+    section("01 / Measured performance", "Held-out event evaluation", "One prediction per eligible event. Recall reveals missed Critical outcomes; precision shows how many Critical alerts were correct.")
+    if result:
         cards = st.columns(4)
-        with cards[0]: metric("Log-risk MAE", num(result.get("mae_log10")), f"Median baseline {num(baseline.get('mae_log10'))}", "#6de5cf")
-        with cards[1]: metric("Critical recall", percent(result.get("critical_recall")), f"{result.get('critical_fn', '—')} missed of {result.get('critical_true', '—')} critical rows", "#ff6f73")
-        with cards[2]: metric("Risk-only recall", percent(result.get("risk_only_critical_recall")), f"{result.get('risk_only_critical_fn', '—')} missed of {result.get('risk_only_critical_true', '—')} high-risk rows", "#f7bd68")
-        with cards[3]: metric("Held-out events", f"{result.get('n_events', 0):,}", f"{result.get('n_rows', 0):,} historical messages", "#86acf4")
-        if "pc_driven_critical_recall" in result:
-            st.write("")
-            section("01B / Sensitivity", "Probability-driven critical cases", "Reference log-risk ≥ −4 and recorded miss distance ≥ 1 km. These are cases where distance alone does not trigger a critical tier.")
-            pc_cards = st.columns(3)
-            with pc_cards[0]: metric("Pc-driven recall · rows", percent(result.get("pc_driven_critical_recall")), f"{result.get('pc_driven_critical_fn', '—')} missed of {result.get('pc_driven_critical_true', '—')} qualifying messages", "#ff6f73")
-            with pc_cards[1]: metric("Pc-driven precision · rows", percent(result.get("pc_driven_critical_precision")), f"{result.get('pc_driven_critical_fp', '—')} false positives in the evaluated subset", "#f7bd68")
-            with pc_cards[2]: metric("Pc-driven recall · events", percent(latest.get("pc_driven_critical_recall")), f"{latest.get('pc_driven_critical_fn', '—')} missed of {latest.get('pc_driven_critical_true', '—')} qualifying events", "#86acf4")
-            st.caption(f"Relevant-risk error: MAE {num(result.get('mae_log10_risk_ge_minus6'))} log₁₀ units over {result.get('n_risk_ge_minus6', 0):,} messages with recorded log-risk ≥ −6.")
-            bootstrap = result.get("pc_driven_recall_event_bootstrap95")
-            if bootstrap and bootstrap.get("lower") is not None and bootstrap.get("upper") is not None:
-                st.caption(f"Exploratory event-resampled 95% interval for row-level Pc-driven recall: {percent(bootstrap['lower'])}–{percent(bootstrap['upper'])}; {bootstrap.get('positive_events', '—')} events contribute critical cases. The selected sample is not representative of live operations.")
-            distance_only = holdout.get("distance_only_rows")
-            if distance_only:
-                comparison = pd.DataFrame([
-                    {"Method": "Distance only", "Critical recall": percent(distance_only.get("critical_recall")), "Pc-driven recall": percent(distance_only.get("pc_driven_critical_recall")), "Pc-driven precision": percent(distance_only.get("pc_driven_critical_precision"))},
-                    {"Method": "Model + distance", "Critical recall": percent(result.get("critical_recall")), "Pc-driven recall": percent(result.get("pc_driven_critical_recall")), "Pc-driven precision": percent(result.get("pc_driven_critical_precision"))},
-                ])
-                st.dataframe(comparison, hide_index=True, width="stretch")
+        with cards[0]: metric("Critical recall", percent(result.get("critical_recall")), f"{result.get('critical_fn', '—')} missed of {result.get('critical_true', '—')} Critical events", "#ff6f73")
+        with cards[1]: metric("Critical precision", percent(result.get("critical_precision")), f"{result.get('critical_fp', '—')} false Critical alerts", "#f7bd68")
+        with cards[2]: metric("Macro F1", num(result.get("macro_f1"), ".3f"), "Equal weight to each final tier", "#6de5cf")
+        with cards[3]: metric("Held-out events", f"{result.get('n_events', 0):,}", f"Accuracy {percent(result.get('accuracy'))}", "#86acf4")
         st.write("")
-        left, right = st.columns([1, 1], gap="large")
+        left, right = st.columns(2, gap="large")
+        comparisons = [("Majority baseline", holdout.get("majority_latest_event", {})), ("Early distance only", holdout.get("distance_only_latest_event", {})), ("Final-tier model", result)]
         with left:
-            section("02 / Compare", "Held-out prediction error", "Log₁₀ risk error, measured on the same held-out messages.")
+            section("02 / Compare", "Forecast versus baseline", "All methods predict the same held-out final labels from the same early evaluation snapshots. Higher recall and macro F1 are better.")
             fig = go.Figure()
-            fig.add_trace(go.Bar(x=["Median baseline", "Selected model"], y=[baseline.get("mae_log10"), result.get("mae_log10")], marker_color=["#567384", "#69e5c7"], text=[num(baseline.get("mae_log10")), num(result.get("mae_log10"))], textposition="outside", hovertemplate="%{x}<br>MAE %{y:.2f}<extra></extra>"))
-            fig.update_yaxes(title="MAE · log₁₀(Pc)", gridcolor=GRID, zeroline=False)
-            fig.update_xaxes(showgrid=False)
-            st.plotly_chart(chart_layout(fig, 280), key="tour_error_chart", width="stretch", config={"displayModeBar": False})
+            for label, field, color in [("Critical recall", "critical_recall", "#ff8588"), ("Macro F1", "macro_f1", "#69e5c7")]:
+                fig.add_bar(name=label, x=[x[0] for x in comparisons], y=[x[1].get(field) for x in comparisons], marker_color=color, hovertemplate="%{x}<br>" + label + ": %{y:.1%}<extra></extra>")
+            fig.update_yaxes(title="Score", range=[0, 1.12], tickformat=".0%", gridcolor=GRID)
+            fig.update_layout(barmode="group")
+            st.plotly_chart(chart_layout(fig, 320), key="tour_error_chart", width="stretch", config={"displayModeBar": False})
         with right:
-            section("03 / Inspect", "Classification outcomes", "Rows are reference tiers from the message's recorded risk; columns are predicted tiers. Both use the recorded miss distance.")
+            section("03 / Inspect", "Final-tier outcomes", "Rows are the organizer’s final tiers; columns are forecast tiers. Every cell counts events, not repeated messages.")
             matrix = result.get("confusion_matrix", {})
             if matrix.get("labels") and matrix.get("values"):
-                fig = go.Figure(go.Heatmap(z=matrix["values"], x=matrix["labels"], y=matrix["labels"], colorscale=[[0,"#132531"],[.5,"#245952"],[1,"#74e5cc"]], text=matrix["values"], texttemplate="%{text}", textfont=dict(color="#f0ffff"), hovertemplate="Reference %{y}<br>Predicted %{x}<br>Messages %{z}<extra></extra>", showscale=False))
-                fig.update_xaxes(title="Predicted tier", side="bottom")
-                fig.update_yaxes(title="Reference tier", autorange="reversed")
-                st.plotly_chart(chart_layout(fig, 280), key="tour_confusion_chart", width="stretch", config={"displayModeBar": False})
-        st.markdown(f'<div class="note"><b>One message per held-out event:</b> critical recall {percent(latest.get("critical_recall"))}; {latest.get("critical_fn", "—")} missed of {latest.get("critical_true", "—")} critical events. The latest available nonnegative-time message represents each event.</div>', unsafe_allow_html=True)
+                fig = go.Figure(go.Heatmap(z=matrix["values"], x=matrix["labels"], y=matrix["labels"], colorscale=[[0,"#132531"],[.5,"#245952"],[1,"#74e5cc"]], text=matrix["values"], texttemplate="%{text}", textfont=dict(color="#f0ffff"), hovertemplate="Final %{y}<br>Forecast %{x}<br>Events %{z}<extra></extra>", showscale=False))
+                fig.update_xaxes(title="Forecast final tier")
+                fig.update_yaxes(title="Official final tier", autorange="reversed")
+                st.plotly_chart(chart_layout(fig, 320), key="tour_confusion_chart", width="stretch", config={"displayModeBar": False})
+        st.dataframe(pd.DataFrame([{"Method": label, "Accuracy": percent(values.get("accuracy")), "Critical recall": percent(values.get("critical_recall")), "Critical precision": percent(values.get("critical_precision")), "Macro F1": num(values.get("macro_f1"), ".3f")} for label, values in comparisons]), hide_index=True, width="stretch")
+        distance_reference = holdout.get("distance_only_latest_event", {})
+        if distance_reference.get("macro_f1", -1) > result.get("macro_f1", -1):
+            recall_change = 100 * (result.get("critical_recall", 0) - distance_reference.get("critical_recall", 0))
+            st.markdown(f'<div class="note"><b>The simple baseline remains competitive:</b> early distance alone has higher macro F1 ({num(distance_reference.get("macro_f1"), ".4f")} versus {num(result.get("macro_f1"), ".4f")}). The classifier changes Critical recall by {recall_change:+.2f} percentage points, with Critical precision {percent(result.get("critical_precision"))} versus {percent(distance_reference.get("critical_precision"))}. This is a measured tradeoff, not an across-the-board improvement.</div>', unsafe_allow_html=True)
+        st.caption(f"Probability scoring: multiclass log loss {num(result.get('log_loss'), '.3f')} · multiclass Brier score {num(result.get('multiclass_brier'), '.3f')}. Lower is better. These scores do not establish calibration or applicability to live operations.")
         if holdout_path.exists():
-            examples = load_csv(str(holdout_path), holdout_path.stat().st_mtime_ns, holdout_path.stat().st_size)
-            if {"true_log10_pc", "predicted_log10_pc", "event_id", "source_row_id"}.issubset(examples.columns):
-                misses = examples[(examples["true_log10_pc"] >= -4) & (examples["miss_distance"] >= 1000) & (examples["predicted_log10_pc"] < -4)]
+            examples = load_csv(str(holdout_path), holdout_path.stat().st_mtime_ns, holdout_path.stat().st_size).copy()
+            examples["input_row_position"] = np.arange(len(examples))
+            examples = latest_by_event(examples)
+            if {"true_final_tier", "risk_tier"}.issubset(examples.columns):
+                misses = examples[(examples["true_final_tier"] == "Critical") & (examples["risk_tier"] != "Critical")]
                 if not misses.empty:
-                    sample = misses.iloc[0]
-                    st.markdown(f'<div class="section-kicker" style="margin-top:22px">04 / A visible failure</div><div class="section-title">A probability-driven critical message the model missed</div><div class="section-caption">Held-out event {safe_text(sample["event_id"])} · source row {safe_text(sample["source_row_id"])}. The recorded miss distance does not independently trigger the critical rule.</div>', unsafe_allow_html=True)
+                    sample = misses.sort_values("prob_critical").iloc[0]
+                    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+                    section("04 / A visible failure", f"Event {sample['event_id']}: a missed Critical outcome", "This early snapshot did not lead the model to the correct final tier. The final outcome is shown for retrospective evaluation only.")
                     c1, c2, c3 = st.columns(3)
-                    with c1: metric("Recorded log-risk", num(sample["true_log10_pc"]), "Reference from historical message", "#ff6f73")
-                    with c2: metric("Model log-risk", num(sample["predicted_log10_pc"]), "Below the −4 risk threshold", "#f7bd68")
-                    with c3: metric("Miss distance", f"{num(sample.get('miss_distance'), ',.0f')} m", "Used independently by tier rules", "#86acf4")
-                false_alarms = examples[(examples["true_risk_tier"] != "Critical") & (examples["risk_tier"] == "Critical")]
+                    with c1: metric("Official final tier", "Critical", "From organizer event labels", "#ff6f73")
+                    with c2: metric("Forecast final tier", str(sample["risk_tier"]), f"P(final Critical) {percent(sample.get('prob_critical'))}", "#f7bd68")
+                    with c3: metric("Early snapshot", f"T−{num(sample.get('time_to_tca'))} d", f"Recorded miss {num(sample.get('miss_distance'), ',.0f')} m", "#86acf4")
+                    st.markdown('<div class="note" style="margin-top:14px">Early geometry and uncertainty estimates can change before the final CDM. This model uses a single eligible snapshot and cannot observe later changes. Its probability is not a safety guarantee; operators must review updated tracking information. The data does not establish the specific cause of this individual error.</div>', unsafe_allow_html=True)
+                false_alarms = examples[(examples["true_final_tier"] != "Critical") & (examples["risk_tier"] == "Critical")]
                 if not false_alarms.empty:
                     sample = false_alarms.iloc[0]
-                    st.markdown(f'<div class="note" style="margin-top:14px"><b>False critical example:</b> held-out event {safe_text(sample["event_id"])} · row {safe_text(sample["source_row_id"])}. Recorded tier {safe_text(sample["true_risk_tier"])}, predicted tier {safe_text(sample["risk_tier"])}, recorded log-risk {num(sample["true_log10_pc"])}, predicted log-risk {num(sample["predicted_log10_pc"])}.</div>', unsafe_allow_html=True)
-        if holdout.get("time_to_tca_buckets"):
-            with st.expander("Performance by time to closest approach"):
-                st.caption("Historical message-relative buckets; not a live forecast. See counts alongside rates.")
-                st.json(holdout["time_to_tca_buckets"], expanded=False)
+                    st.markdown(f'<div class="note" style="margin-top:14px"><b>False Critical alert:</b> event {safe_text(sample["event_id"])} · source row {safe_text(sample["source_row_id"])}. Forecast Critical, official final tier {safe_text(sample["true_final_tier"])}; P(final Critical) {percent(sample.get("prob_critical"))}.</div>', unsafe_allow_html=True)
     else:
-        st.info("No held-out results were recorded in the metrics artifact.")
-    with st.expander("Full held-out metrics"):
-        st.json(holdout, expanded=2)
-    if metrics.get("validation"):
-        with st.expander("Model selection and feature ablation"):
-            st.json(metrics["validation"], expanded=2)
-    comparison_path = ROOT / "experiments" / "model_comparison.json"
-    if comparison_path.exists():
-        with st.expander("Exploratory comparison with the earlier model"):
-            st.caption("This comparison uses a reconstructed earlier model and the same previously inspected holdout; it is not an independent evaluation. The experiment file is separate from the checked artifact bundle.")
-            try:
-                with comparison_path.open(encoding="utf-8") as comparison_file:
-                    comparison_data = json.load(comparison_file)
-                current_rows = comparison_data["holdout_rows"]["current"]
-                matches_bundle = bundle["status"] == "verified" and comparison_data.get("current_model_sha256") == bundle.get("model_sha256")
-                matches_metrics = all(current_rows.get(k) == holdout.get("rows", {}).get(k) for k in ["n_rows", "n_events", "pc_driven_critical_tp", "pc_driven_critical_fn", "pc_driven_critical_fp"])
-                if not matches_bundle or not matches_metrics:
-                    st.warning("This experiment does not match the currently loaded model and metrics; comparison suppressed.")
-                else:
-                    table = []
-                    for label, key in [("Earlier unweighted", "reference"), ("Current weighted", "current")]:
-                        values = comparison_data["holdout_rows"][key]
-                        event_values = comparison_data["holdout_latest_event"][key]
-                        table.append({"Model": label,
-                                      "Pc-driven recall · rows": percent(values.get("pc_driven_critical_recall")),
-                                      "Missed / qualifying rows": f"{values.get('pc_driven_critical_fn', '—')} / {values.get('pc_driven_critical_true', '—')}",
-                                      "Pc-driven precision · rows": percent(values.get("pc_driven_critical_precision")),
-                                      "Relevant-risk MAE": num(values.get("mae_log10_risk_ge_minus6")),
-                                      "Overall MAE": num(values.get("mae_log10")),
-                                      "Pc-driven events found": f"{event_values.get('pc_driven_critical_tp', '—')} / {event_values.get('pc_driven_critical_true', '—')}"})
-                    st.dataframe(pd.DataFrame(table), hide_index=True, width="stretch")
-                    st.caption("Both models missed the only Pc-driven critical latest-event case. The event denominator is too small to support a reliable performance estimate.")
-            except (OSError, ValueError, KeyError, TypeError) as exc:
-                st.warning(f"Could not read the comparison experiment: {exc}")
-    for key, title in [("split", "Event split"), ("data", "Data profile"), ("model", "Model and features"), ("notes", "Limitations and notes")]:
+        st.info("No final-tier holdout results were recorded in the metrics artifact.")
+    for key, title in [("holdout", "Full held-out results"), ("validation", "Validation and model selection"), ("split", "Event split"), ("data", "Coverage and data profile"), ("model", "Model and features"), ("notes", "Limitations and notes")]:
         if key in metrics:
             with st.expander(title): st.json(metrics[key], expanded=2)
-    st.markdown('<div class="note" style="margin-top:16px">Risk-tier metrics combine the predicted risk with observed miss distance. A distance trigger can mask a missed high-risk prediction, so inspect risk-only recall as well as the combined classification. These historical samples were selected and are not representative of real-world event prevalence.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="note" style="margin-top:16px">Coverage matters: 11,942 of 13,154 labeled events contain an eligible early message. The other 1,212 cannot be forecast under the official cutoff and are excluded from model evaluation. The historical sample is not a live operational prevalence estimate.</div>', unsafe_allow_html=True)
 
 else:
     st.markdown('<div class="eyebrow">Asteria / Method</div>', unsafe_allow_html=True)
     st.title("Clarity in every decision.")
-    st.markdown('<p class="lede">The data, thresholds and boundaries of this demonstration are as important as its predictions.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="lede">The updated Airbus task: forecast the final tier, from early telemetry, with uncertainty and traceable evidence.</p>', unsafe_allow_html=True)
     left, right = st.columns(2, gap="large")
     with left:
-        section("01 / Classify", "The Airbus challenge rules", "The first matching rule takes precedence. Missing decisive information is marked incomplete.")
+        section("01 / Define the target", "The official final-tier rules", "These rules label final outcomes in the organizer’s workbook. The model forecasts that label from early telemetry; it does not apply these rules to classifier probabilities.")
         st.markdown("""
-        | Tier | Rule |
+        | Final tier | Rule on final recorded telemetry |
         |:--|:--|
-        | **Critical** | Estimated log₁₀(Pc) ≥ −4 **or** miss distance < 1 km |
-        | **Elevated** | Otherwise, estimated log₁₀(Pc) ≥ −6 **or** miss distance ≤ 5 km |
-        | **Safe** | Estimated log₁₀(Pc) < −6 **and** miss distance > 5 km |
-        | **Incomplete** | Missing inputs prevent a decision |
+        | **Critical** | risk ≥ −4 **or** miss distance < 1,000 m |
+        | **Elevated** | Not Critical, and risk ≥ −6 **or** miss distance ≤ 5,000 m |
+        | **Safe** | risk < −6 **and** miss distance > 5,000 m |
         """)
-        st.markdown('<div class="note">These are the brief’s challenge thresholds, not a universal operational maneuver policy. A critical alert is a cue for qualified review.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="note"><b>Two different probabilities:</b> recorded risk is log₁₀(Pc), so Pc = 10<sup>risk</sup>. Our three outputs instead estimate P(final tier = Critical / Elevated / Safe). They are uncalibrated class probabilities and must never be interpreted as collision Pc.</div>', unsafe_allow_html=True)
+        brief_path = ROOT / "docs" / "airbus-challenge-updated.pdf"
+        if brief_path.exists():
+            st.download_button("↓  Updated Airbus challenge · official source", data=brief_path.read_bytes(), file_name=brief_path.name, mime="application/pdf", width="stretch")
     with right:
-        section("02 / Interpret", "What the data can show", "The dataset has repeated conjunction data messages per event.")
+        section("02 / Respect the cutoff", "What goes into a forecast", "One latest eligible CDM per event for training and headline evaluation. Replay forecasts use each selected early snapshot independently.")
         st.markdown("""
-        - **Time to closest approach** is measured in days from each message’s creation time.
-        - **Miss distance and R/T/N position** are measured in metres in the source file; the geometry view displays kilometres.
-        - The test set contains messages at least two days before closest approach. It contains no 24-hour messages.
-        - The model estimates the risk recorded in the same message, not a later final collision risk.
-        - The test `risk` column is excluded from model inputs and model selection.
-        - Event IDs are scoped to each file and cannot be used to match events between train and test.
+        - Only messages with **time_to_tca ≥ 2 days** are eligible. Later uploads receive an abstention.
+        - Miss distance and R/T/N are **metres**; the 3D view displays kilometres. Relative speed is **m/s**.
+        - The original 12 telemetry features are retained. `risk`, `event_id` and final label fields are not model inputs.
+        - Train, validation and holdout contain separate event IDs. Train/test IDs restart independently and are never joined.
+        - Test data contains only early messages and **no final outcomes**; it demonstrates forecasts, not measured accuracy.
+        - No orbital elements or common clock times are available. Plots show relative geometry and time-to-TCA, not propagated orbits.
         """)
-        st.markdown('[ESA dataset documentation](https://kelvins.esa.int/collision-avoidance-challenge/data/) · [NASA conjunction assessment](https://www.nasa.gov/cara/step-2-close-approach-risk-assessment/)')
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    section("03 / Responsible use", "Human judgment stays in the loop", "A low estimated probability is not a guarantee of safety. The model has not been certified or calibrated for real operations.")
-    st.markdown('<div class="note">This prototype is for demonstration and research. It does not issue maneuver commands, use a live tracking feed, reconstruct orbital trajectories, or substitute for a qualified conjunction assessment.</div>', unsafe_allow_html=True)
+    section("03 / Know the coverage", "Official labels, explicit limits", "The new workbook is the source of truth for final outcomes.")
+    a, b, c = st.columns(3)
+    with a: metric("Labeled events", "13,154", "908 Critical · 2,403 Elevated · 9,843 Safe", "#6de5cf")
+    with b: metric("Eligible early events", "11,942", "834 Critical · 2,162 Elevated · 8,946 Safe", "#f7bd68")
+    with c: metric("Without early coverage", "1,212", "Excluded; no ≥2-day message exists", "#86acf4")
+    st.write("")
+    st.markdown('<div class="note"><b>Final means the organizer’s last available record:</b> the workbook selects the smallest time_to_tca. For 3,050 events that record is still ≥2 days out; 389 final timestamps are negative. We use the supplied labels as authoritative, without claiming that every final outcome was observed at TCA. Around 41% of original train rows have risk = −30, a placeholder for Pc ≈ 0, not a precisely measured probability.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+    section("04 / Responsible use", "Human judgment stays in the loop", "Forecasts support prioritization; a qualified person evaluates every operational maneuver.")
+    st.markdown('<div class="note">This research prototype has no live tracking feed, certified maneuver policy or operational probability calibration. It cannot authorize or execute a maneuver. Model evidence includes baselines and real held-out errors so its limits stay visible.</div>', unsafe_allow_html=True)
+
+st.caption(f"Asteria · {APP_VERSION} · Updated Airbus brief, 31 October 2026 12:45 PM")

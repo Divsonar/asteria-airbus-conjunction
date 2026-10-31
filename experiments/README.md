@@ -1,3 +1,7 @@
+# Archived pre-clarification experiments
+
+These experiments target same-message log risk and are superseded by the official final-tier forecast pipeline in `src/pipeline.py`. They are not deployed or used for current metrics. Their saved outputs are historical only. The archived pipeline writes to `experiments/legacy_artifacts`, never the production artifact directory.
+
 # Exploratory model studies
 
 These studies are offline research tools. They do not update the production dashboard, model or prediction bundle, and none reads the supplied test file's `risk` labels. Each uses the training-file event split in `artifacts/split_events.json`. The historical holdout and some validation results were inspected during development, so none is a fresh blind evaluation. This is a selected, high-risk-enriched dataset, not a random operational population.

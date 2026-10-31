@@ -24,7 +24,7 @@ def write(context, **changes):
     payload = dict(dataset_id="test:sha256:123", event_id="482", source_row_id=5430,
                    action="Accept", reason="Reviewed telemetry quality", analyst="Analyst A",
                    model_path=model, evidence={"risk_tier": "Critical", "miss_distance_m": 601,
-                                               "predicted_log10_pc": -11.51, "input_row_position": 14,
+                                               "prob_critical": .75, "input_row_position": 14,
                                                "private_unexpected_value": "must not persist",
                                                "risk": -3.5})
     payload.update(changes)
@@ -39,6 +39,8 @@ def test_record_contains_fingerprint_and_only_whitelisted_snapshot(context):
     assert evidence["risk_tier"] == "Critical"
     assert evidence["miss_distance_m"] == 601
     assert evidence["input_row_position"] == 14
+    assert evidence["prob_critical"] == .75
+    assert "estimated_pc" not in evidence
     assert "risk" not in evidence
     assert "private_unexpected_value" not in evidence
     expected = hashlib.sha256(record["evidence_json"].encode("utf-8")).hexdigest()

@@ -1,46 +1,39 @@
-"""Input isolation and row-output checks for the inference contract."""
+"""Early-only inference, target isolation and probability semantics."""
 import unittest
 import numpy as np
 import pandas as pd
 from src.pipeline import FEATURES, predict_messages
 
-
 class StubModel:
-    def predict(self, features):
+    classes_ = np.array(["Critical", "Elevated", "Safe"])
+    def predict_proba(self, features):
         assert list(features.columns) == FEATURES
         assert "risk" not in features.columns
-        return np.array([-7.0, -3.0])
-
+        assert (features.time_to_tca >= 2).all()
+        return np.tile([.1, .2, .7], (len(features), 1))
 
 class PredictionContractTests(unittest.TestCase):
     def setUp(self):
-        self.frame = pd.DataFrame({
-            "source_row_id": [19, 25], "event_id": [1, 2],
-            "time_to_tca": [3.0, "not numeric"], "miss_distance": [1000.0, "bad"],
-            "relative_speed": [8000.0, 7500.0],
-            "relative_position_r": [10.0, 20.0], "relative_position_t": [100.0, 200.0],
-            "relative_position_n": [100.0, 200.0], "c_object_type": ["DEBRIS", "UNKNOWN"],
-            "c_sigma_r": [100.0, 100.0], "t_sigma_r": [10.0, 10.0],
-            "max_risk_estimate": [-6.0, -5.0], "F10": [100.0, 100.0], "AP": [10.0, 10.0],
-            "risk": [-30.0, -4.0],
-        })
-
-    def test_output_is_ordered_and_target_column_is_never_input(self):
+        self.frame = pd.DataFrame({name: [10.0] * 4 for name in FEATURES})
+        self.frame["event_id"] = ["001", "002", "003", "004"]
+        self.frame["source_row_id"] = ["019", "025", "030", "031"]
+        self.frame["time_to_tca"] = [3.0, 2.0, 1.9999, "invalid"]
+        self.frame["c_object_type"] = "DEBRIS"
+        self.frame["risk"] = [-3, -30, -6, -1]
+        self.frame["final_tier"] = "Critical"
+    def test_output_preserves_rows_and_excludes_late_telemetry(self):
         result = predict_messages(self.frame, model=StubModel())
-        self.assertEqual(result.source_row_id.tolist(), [19, 25])
-        self.assertEqual(result.event_id.tolist(), [1, 2])
-        self.assertNotIn("risk", result.columns)
-        self.assertEqual(result.risk_tier.tolist(), ["Elevated", "Critical"])
-        self.assertAlmostEqual(result.estimated_pc.iloc[0], 1e-7)
-        self.assertAlmostEqual(result.estimated_pc.iloc[1], 1e-3)
-        self.assertTrue(pd.isna(result.time_to_tca.iloc[1]))
-        self.assertTrue(pd.isna(result.miss_distance.iloc[1]))
-        self.assertIn("Imputed model inputs", result.data_quality.iloc[1])
-
+        self.assertEqual(result.source_row_id.tolist(), ["019", "025", "030", "031"])
+        self.assertEqual(result.event_id.tolist(), ["001", "002", "003", "004"])
+        self.assertEqual(result.predicted_final_tier.tolist(), ["Safe", "Safe", "Incomplete", "Incomplete"])
+        np.testing.assert_allclose(result.prob_safe.iloc[:2], [.7, .7])
+        self.assertTrue(result.prob_safe.iloc[2:].isna().all())
+        for column in ("risk", "final_tier", "predicted_log10_pc", "estimated_pc"):
+            self.assertNotIn(column, result)
+        self.assertEqual(result.risk_tier.iloc[0], "Safe")
     def test_required_columns_are_checked(self):
         with self.assertRaises(ValueError):
             predict_messages(self.frame.drop(columns=["relative_speed"]), model=StubModel())
-
 
 if __name__ == "__main__":
     unittest.main()
