@@ -248,8 +248,6 @@ if page == "Mission control":
     with top_right:
         st.markdown('<div style="text-align:right;padding-top:18px"><span class="status"><span class="dot"></span> Historical data</span></div>', unsafe_allow_html=True)
     st.markdown('<div class="hero"><div class="hero-label">Early conjunction assessment / 2+ days ahead</div><div class="hero-title">A clearer picture of what needs attention.</div><div class="hero-copy">Replay early message updates, rotate the encounter geometry and see how the forecast changes. Three probabilities express the model’s view of the final tier. Every maneuver decision stays with the operator.</div></div>', unsafe_allow_html=True)
-    sensitivity_warning()
-
     with st.sidebar:
         st.markdown('<div class="eyebrow" style="margin:22px 0 8px">Data & filters</div>', unsafe_allow_html=True)
         choices = list(data_sources)
@@ -370,7 +368,6 @@ if page == "Mission control":
     with cards[0]: metric("Events in view", f"{len(filtered):,}", "Latest eligible message · ≥2 days", "#6de5cf")
     with cards[1]: metric("Critical", f"{counts.get('Critical', 0):,}", "Requires priority review", "#ff6f73")
     with cards[2]: metric("Elevated", f"{counts.get('Elevated', 0):,}", "Monitor and investigate", "#f7bd68")
-    st.caption(f"{int(filtered['review_required'].sum()):,} selected event messages have data-quality review flags. Flags do not measure model uncertainty.")
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     if filtered.empty:
