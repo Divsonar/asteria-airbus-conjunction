@@ -36,7 +36,7 @@ Apply Critical first when log10(Pc) ≥ −4 or miss distance < 1,000 m. Otherwi
 - Historical buckets are not synchronized live forecasts. The 3D view is relative encounter geometry, not orbit propagation.
 - The final tier is a recorded label, not a collision outcome. Analyst reviews and reports do not authorize maneuvers.
 - Prior exploration of this dataset must remain disclosed. A new target and event split do not make these data an independent operational validation.
-- The existing showcase is an interface recording captured before the clarification. Label it accordingly and direct viewers to the live app for current model results.
+- The 30-second showcase has been refreshed from the updated live app, including final-tier forecasts, real rotation/replay and current evidence.
 - Earlier same-message, Pc-driven and conformal studies remain archived under experiments/; their scores are obsolete for the current target.
 
 ## Follow-up work after the migration
@@ -44,6 +44,6 @@ Apply Critical first when log10(Pc) ≥ −4 or miss distance < 1,000 m. Otherwi
 - Validate against independent labelled events or organiser scoring, then assess class-probability calibration and error trade-offs.
 - Confirm the organiser's exact submission schema before creating a scoring-specific export.
 - Add durable review storage and user authentication if the prototype becomes a shared operational service.
-- Re-record the showcase with the new target and current evidence when time permits.
+- Keep the showcase synchronized with model or interface changes.
 
 Live feeds, automated maneuvers, orbit propagation and framework rewrites remain outside this MVP.

@@ -6,7 +6,7 @@ The task is to predict the **final recorded event tier from a message available 
 
 1. Open the current app and check that artifact verification succeeds and the model target is final event tier.
 2. Read the regenerated Model evidence results and class denominators. Choose a current held-out error example; do not reuse old same-message regression scores, Pc-driven subset scores or hard-coded case IDs from a previous model.
-3. Keep the updated challenge PDFs, this script and a fallback recording available. The existing 30-second showcase predates the target clarification and demonstrates the interface only.
+3. Keep the updated challenge PDFs, this script and a fallback recording available. The refreshed 30-second showcase shows the current final-tier probabilities, real rotation and replay, and held-out metrics.
 4. Reset the dataset and filters between rehearsals. Avoid creating misleading analyst-review records during practice.
 5. Confirm that the test demonstration does not display training-file final labels.
 
@@ -26,7 +26,7 @@ The task is to predict the **final recorded event tier from a message available 
 
 Choose an example from the regenerated holdout predictions, comparing the official true_final_tier and the model's predicted_final_tier. Prefer a missed Critical event, then a false Critical alarm, if present. Show its latest eligible early message and the final recorded label separately. Do not imply that a test-demo event has a known final outcome.
 
-Recheck counts against the current evidence screen after any rebuild. Do not quote scores from the pre-clarification recording or archived experiments.
+Recheck counts against the current evidence screen after any rebuild. Use the refreshed showcase for a fallback; archived experiment scores concern the obsolete target.
 
 ## Likely judge questions
 

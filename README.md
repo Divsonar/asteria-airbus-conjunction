@@ -6,7 +6,7 @@ An interactive prototype for Airbus Challenge 1: predict an event's **final reco
 
 **[Watch the 30-second interface showcase](assets/asteria-showcase-30s.mp4)**
 
-Interface showcase (captured before the 31 October target clarification); current model results are in the live app. The banner and video are stored in this private repository alongside the source.
+Refreshed from the updated live app on 31 October: actual 3D rotation, all 13 early-message replay states, final-tier probabilities and current held-out evaluation. The banner and video are stored in this private repository alongside the source.
 
 ## Updated challenge contract
 
@@ -55,7 +55,7 @@ On another machine, create a Python 3.12 virtual environment and install require
 1. Open **Mission control**, choose a dataset, filter the event queue, and select an event. Predicted final tiers and model class probabilities describe the early forecast; recorded telemetry describes the selected message; deterministic rules define the official final labels.
 2. Rotate the 3D encounter view and move the replay slider. The view shows relative encounter geometry and distance guides, not a propagated orbit. Replay can inspect multiple eligible messages; headline model metrics still count each holdout event once.
 3. Open message evidence and the assessment PDF to inspect source values, rules, data-quality flags and limitations. A guided tour points to the controls and charts.
-4. Open **Model evidence** for current event-level metrics, class denominators, the confusion matrix and actual errors. Use the regenerated results, not numbers from the earlier showcase.
+4. Open **Model evidence** for current event-level metrics, class denominators, the confusion matrix and actual errors. The refreshed showcase uses this same final-tier model and evaluation.
 5. Download predictions, upload a telemetry CSV, or record an analyst review with a reason. Reviews document a human assessment; they do not authorize a maneuver.
 
 Uploads need an event ID and all 12 permitted telemetry features. Any recorded risk or final-outcome columns are ignored at inference. Predictions preserve every input row: rows with missing time-to-TCA or time-to-TCA below two days receive an ineligible forecast status, an Incomplete tier, and no class probabilities. Eligible replay rows can receive forecasts, but do not become extra evaluation events.
